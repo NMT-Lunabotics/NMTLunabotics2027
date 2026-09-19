@@ -1,0 +1,35 @@
+#!/usr/bin/env python3
+
+import serial
+import serial.tools.list_ports
+import time
+
+BAUDRATE = 115200
+PORT = "/dev/ttyACM0"
+
+def find_arduino():
+    ports = serial.tools.list_ports.comports()
+    for port in ports:
+        description = port.description.lower()
+        if "arduino" in description: return port.device
+        if port.vid is not None: return port.device
+    raise RuntimeError("Arduino not found")
+
+
+def main():
+    port = PORT or find_arduino()
+    print(f"Opening {port} at {BAUDRATE} baud")
+    ser = serial.Serial(port=port, baudrate=BAUDRATE, timeout=0.1)
+    time.sleep(2)
+    print("Listening for serial feedback...")
+
+    try:
+        while True:
+            if ser.in_waiting > 0:
+                data = ser.read(ser.in_waiting)
+                print(data.decode("utf-8", errors="replace"), end="", flush=True)
+
+    except KeyboardInterrupt: print("\nStopping.")
+    finally: ser.close()
+
+if __name__ == "__main__": main()

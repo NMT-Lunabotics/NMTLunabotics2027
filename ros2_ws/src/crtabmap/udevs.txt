@@ -1,0 +1,15 @@
+cd ~
+git clone https://github.com/IntelRealSense/librealsense.git
+cd librealsense
+sudo cp config/99-realsense-libusb.rules /etc/udev/rules.d/
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+
+echo 'KERNEL=="iio:device*", MODE="0666"' | sudo tee /etc/udev/rules.d/90-iio-permissions.rules
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+
+colcon build --packages-select crtabmap
+
+pip install scipy
+pip install 
