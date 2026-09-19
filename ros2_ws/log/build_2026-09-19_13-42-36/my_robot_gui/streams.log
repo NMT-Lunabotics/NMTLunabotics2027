@@ -1,0 +1,48 @@
+[0.247s] Invoking command in '/home/amaya/NMTLunabotics2027/ros2_ws/src/my_robot_gui': PYTHONPATH=/home/amaya/NMTLunabotics2027/ros2_ws/build/my_robot_gui/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/my_robot_gui build --build-base /home/amaya/NMTLunabotics2027/ros2_ws/build/my_robot_gui/build install --record /home/amaya/NMTLunabotics2027/ros2_ws/build/my_robot_gui/install.log --install-scripts $base/lib/my_robot_gui --single-version-externally-managed install_data
+[0.344s] running egg_info
+[0.344s] creating ../../build/my_robot_gui/my_robot_gui.egg-info
+[0.344s] writing ../../build/my_robot_gui/my_robot_gui.egg-info/PKG-INFO
+[0.344s] writing dependency_links to ../../build/my_robot_gui/my_robot_gui.egg-info/dependency_links.txt
+[0.344s] writing entry points to ../../build/my_robot_gui/my_robot_gui.egg-info/entry_points.txt
+[0.344s] writing requirements to ../../build/my_robot_gui/my_robot_gui.egg-info/requires.txt
+[0.344s] writing top-level names to ../../build/my_robot_gui/my_robot_gui.egg-info/top_level.txt
+[0.344s] writing manifest file '../../build/my_robot_gui/my_robot_gui.egg-info/SOURCES.txt'
+[0.345s] reading manifest file '../../build/my_robot_gui/my_robot_gui.egg-info/SOURCES.txt'
+[0.346s] writing manifest file '../../build/my_robot_gui/my_robot_gui.egg-info/SOURCES.txt'
+[0.346s] running build
+[0.346s] running build_py
+[0.346s] creating /home/amaya/NMTLunabotics2027/ros2_ws/build/my_robot_gui/build
+[0.346s] creating /home/amaya/NMTLunabotics2027/ros2_ws/build/my_robot_gui/build/lib
+[0.346s] creating /home/amaya/NMTLunabotics2027/ros2_ws/build/my_robot_gui/build/lib/my_robot_gui
+[0.346s] copying my_robot_gui/layout_one.py -> /home/amaya/NMTLunabotics2027/ros2_ws/build/my_robot_gui/build/lib/my_robot_gui
+[0.346s] copying my_robot_gui/subscriber.py -> /home/amaya/NMTLunabotics2027/ros2_ws/build/my_robot_gui/build/lib/my_robot_gui
+[0.346s] copying my_robot_gui/__init__.py -> /home/amaya/NMTLunabotics2027/ros2_ws/build/my_robot_gui/build/lib/my_robot_gui
+[0.346s] copying my_robot_gui/main.py -> /home/amaya/NMTLunabotics2027/ros2_ws/build/my_robot_gui/build/lib/my_robot_gui
+[0.346s] running install
+[0.346s] running install_lib
+[0.346s] creating /home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/lib/python3.10/site-packages/my_robot_gui
+[0.346s] copying /home/amaya/NMTLunabotics2027/ros2_ws/build/my_robot_gui/build/lib/my_robot_gui/layout_one.py -> /home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/lib/python3.10/site-packages/my_robot_gui
+[0.346s] copying /home/amaya/NMTLunabotics2027/ros2_ws/build/my_robot_gui/build/lib/my_robot_gui/subscriber.py -> /home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/lib/python3.10/site-packages/my_robot_gui
+[0.346s] copying /home/amaya/NMTLunabotics2027/ros2_ws/build/my_robot_gui/build/lib/my_robot_gui/__init__.py -> /home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/lib/python3.10/site-packages/my_robot_gui
+[0.346s] copying /home/amaya/NMTLunabotics2027/ros2_ws/build/my_robot_gui/build/lib/my_robot_gui/main.py -> /home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/lib/python3.10/site-packages/my_robot_gui
+[0.346s] byte-compiling /home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/lib/python3.10/site-packages/my_robot_gui/layout_one.py to layout_one.cpython-310.pyc
+[0.347s] byte-compiling /home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/lib/python3.10/site-packages/my_robot_gui/subscriber.py to subscriber.cpython-310.pyc
+[0.347s] byte-compiling /home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/lib/python3.10/site-packages/my_robot_gui/__init__.py to __init__.cpython-310.pyc
+[0.347s]   File "/home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/lib/python3.10/site-packages/my_robot_gui/subscriber.py", line 5
+[0.347s]     class BatterySubscriber(Node);
+[0.347s]                                  ^
+[0.347s] SyntaxError: invalid syntax
+[0.347s] 
+[0.347s] byte-compiling /home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/lib/python3.10/site-packages/my_robot_gui/main.py to main.cpython-310.pyc
+[0.347s] running install_data
+[0.347s] creating /home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/share/ament_index
+[0.347s] creating /home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/share/ament_index/resource_index
+[0.347s] creating /home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/share/ament_index/resource_index/packages
+[0.347s] copying resource/my_robot_gui -> /home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/share/ament_index/resource_index/packages
+[0.347s] copying package.xml -> /home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/share/my_robot_gui
+[0.347s] running install_egg_info
+[0.348s] Copying ../../build/my_robot_gui/my_robot_gui.egg-info to /home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/lib/python3.10/site-packages/my_robot_gui-0.0.0-py3.10.egg-info
+[0.348s] running install_scripts
+[0.358s] Installing subscriber script to /home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/lib/my_robot_gui
+[0.358s] writing list of installed files to '/home/amaya/NMTLunabotics2027/ros2_ws/build/my_robot_gui/install.log'
+[0.368s] Invoked command in '/home/amaya/NMTLunabotics2027/ros2_ws/src/my_robot_gui' returned '0': PYTHONPATH=/home/amaya/NMTLunabotics2027/ros2_ws/build/my_robot_gui/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/my_robot_gui build --build-base /home/amaya/NMTLunabotics2027/ros2_ws/build/my_robot_gui/build install --record /home/amaya/NMTLunabotics2027/ros2_ws/build/my_robot_gui/install.log --install-scripts $base/lib/my_robot_gui --single-version-externally-managed install_data

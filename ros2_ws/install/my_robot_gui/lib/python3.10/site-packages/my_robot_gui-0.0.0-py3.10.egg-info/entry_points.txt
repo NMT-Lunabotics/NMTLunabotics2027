@@ -1,0 +1,3 @@
+[console_scripts]
+subscriber = my_robot_gui.subscriber:main
+

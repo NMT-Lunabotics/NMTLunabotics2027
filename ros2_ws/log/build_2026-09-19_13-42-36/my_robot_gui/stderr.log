@@ -1,0 +1,5 @@
+  File "/home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/lib/python3.10/site-packages/my_robot_gui/subscriber.py", line 5
+    class BatterySubscriber(Node);
+                                 ^
+SyntaxError: invalid syntax
+

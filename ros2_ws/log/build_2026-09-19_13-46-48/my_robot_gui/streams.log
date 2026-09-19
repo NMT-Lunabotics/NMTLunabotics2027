@@ -1,0 +1,24 @@
+[0.264s] Invoking command in '/home/amaya/NMTLunabotics2027/ros2_ws/src/my_robot_gui': PYTHONPATH=/home/amaya/NMTLunabotics2027/ros2_ws/build/my_robot_gui/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/my_robot_gui build --build-base /home/amaya/NMTLunabotics2027/ros2_ws/build/my_robot_gui/build install --record /home/amaya/NMTLunabotics2027/ros2_ws/build/my_robot_gui/install.log --install-scripts $base/lib/my_robot_gui --single-version-externally-managed install_data
+[0.368s] running egg_info
+[0.368s] writing ../../build/my_robot_gui/my_robot_gui.egg-info/PKG-INFO
+[0.368s] writing dependency_links to ../../build/my_robot_gui/my_robot_gui.egg-info/dependency_links.txt
+[0.368s] writing entry points to ../../build/my_robot_gui/my_robot_gui.egg-info/entry_points.txt
+[0.368s] writing requirements to ../../build/my_robot_gui/my_robot_gui.egg-info/requires.txt
+[0.368s] writing top-level names to ../../build/my_robot_gui/my_robot_gui.egg-info/top_level.txt
+[0.370s] reading manifest file '../../build/my_robot_gui/my_robot_gui.egg-info/SOURCES.txt'
+[0.370s] writing manifest file '../../build/my_robot_gui/my_robot_gui.egg-info/SOURCES.txt'
+[0.370s] running build
+[0.370s] running build_py
+[0.370s] copying my_robot_gui/subscriber.py -> /home/amaya/NMTLunabotics2027/ros2_ws/build/my_robot_gui/build/lib/my_robot_gui
+[0.370s] running install
+[0.370s] running install_lib
+[0.370s] copying /home/amaya/NMTLunabotics2027/ros2_ws/build/my_robot_gui/build/lib/my_robot_gui/subscriber.py -> /home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/lib/python3.10/site-packages/my_robot_gui
+[0.371s] byte-compiling /home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/lib/python3.10/site-packages/my_robot_gui/subscriber.py to subscriber.cpython-310.pyc
+[0.371s] running install_data
+[0.371s] running install_egg_info
+[0.372s] removing '/home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/lib/python3.10/site-packages/my_robot_gui-0.0.0-py3.10.egg-info' (and everything under it)
+[0.372s] Copying ../../build/my_robot_gui/my_robot_gui.egg-info to /home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/lib/python3.10/site-packages/my_robot_gui-0.0.0-py3.10.egg-info
+[0.372s] running install_scripts
+[0.381s] Installing subscriber script to /home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/lib/my_robot_gui
+[0.381s] writing list of installed files to '/home/amaya/NMTLunabotics2027/ros2_ws/build/my_robot_gui/install.log'
+[0.391s] Invoked command in '/home/amaya/NMTLunabotics2027/ros2_ws/src/my_robot_gui' returned '0': PYTHONPATH=/home/amaya/NMTLunabotics2027/ros2_ws/build/my_robot_gui/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/my_robot_gui build --build-base /home/amaya/NMTLunabotics2027/ros2_ws/build/my_robot_gui/build install --record /home/amaya/NMTLunabotics2027/ros2_ws/build/my_robot_gui/install.log --install-scripts $base/lib/my_robot_gui --single-version-externally-managed install_data

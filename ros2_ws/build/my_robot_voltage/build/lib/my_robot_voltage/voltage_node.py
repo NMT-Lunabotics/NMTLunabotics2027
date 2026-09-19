@@ -9,7 +9,7 @@ class VoltageNode(Node):
         super().__init__('voltage_node')
 
         self.voltage_pub = self.create_publisher(Float32, '/battery_voltage', 10)
-        timer_period = 2 #seconds
+        timer_period = 0.5 #seconds
         self.timer = self.create_timer(timer_period, self.publish_data)
 
     def publish_data(self):

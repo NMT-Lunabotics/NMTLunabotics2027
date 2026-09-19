@@ -1,0 +1,3 @@
+[console_scripts]
+voltage_node = my_robot_voltage.voltage_node:main
+
