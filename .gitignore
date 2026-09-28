@@ -1,1 +1,28 @@
+# ROS 2 colcon workspace output
+ros2_ws/build/
+ros2_ws/install/
+ros2_ws/log/
 
+# ROS runtime data and recordings
+.ros/
+ros_logs/
+bags/
+*.db3
+*.mcap
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+id_rsa*
+
+# Local Docker runtime output
+.robot_logs/
+
+# Editor and operating-system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
