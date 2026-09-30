@@ -1,0 +1,79 @@
+camera_manager:
+  ros__parameters:
+    cameras:
+      camera0:
+        uuid: "311322301206"
+        id: 0
+      camera1:
+        uuid: "213522253528"
+        id: 1
+      camera2:
+        uuid: "306322300659"
+        id: 2
+    feeds:
+        # Primary user camera feed
+        primary:
+          camera0:
+            enabled: true       # Enable camera stream
+            camera: [0, 1, 2]   # Camera id: number
+            type: rgb           # Camera feed type: rgb, depth, infered, accel, gyro
+            width: 160          # Camera resulution 
+            height: 120         # Camera resulution 
+            fps: 24             # Camera framerate or sensor sample rate
+            topic: "/stream"    # Camera output stream
+            compression:
+              jpeg_quality: 30  # Jpeg compression quaility 
+            crop:               # image cropper 
+              x: 0
+              y: 0
+              width: 160
+              height: 120
+
+        # rtabmap camera feeds
+        rtabmap:
+          rgb_feed:
+            enabled: false
+            camera: [1]         
+            type: rgb          
+            width: 640         
+            height: 480         
+            fps: 30             
+            topic: "/rgb"       
+            compression:
+              jpeg_quality: 0  
+
+          depth_feed:
+            enabled: false
+            camera: [1]          
+            type: depth         
+            width: 640         
+            height: 480         
+            fps: 30             
+            topic: "/depth"       
+            compression:
+              jpeg_quality: 0 
+
+          inferred_feed1:
+            enabled: false
+            camera: [1]          
+            type: inferred2   
+            width: 640         
+            height: 480         
+            fps: 30             
+            topic: "/inferred1"       
+            compression:
+              jpeg_quality: 0 
+
+          sensor_feed_accel:
+            enabled: true
+            camera: [1]           
+            type: accel
+            topic: "/accel"
+            fps: 200  
+
+          sensor_feed_gyro:
+            enabled: true
+            camera: [1]           
+            type: gyro
+            topic: "/gyro"
+            fps: 200    

@@ -1,0 +1,1 @@
+ros2 param set /camera_manager cameras.camera2.uuid '!!str 213522253528'
