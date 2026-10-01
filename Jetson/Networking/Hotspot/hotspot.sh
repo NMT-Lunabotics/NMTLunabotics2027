@@ -5,7 +5,6 @@ source /etc/hotspot.conf
 
 CON_NAME="Hotspot"
 BAND="bg"
-ADDRESS="10.42.0.1/24"
 FAIL_THRESHOLD=3
 RETRY_INTERVAL=60
 RETRY_WAIT=20
