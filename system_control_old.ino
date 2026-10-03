@@ -26,12 +26,10 @@
 #define LEDR_PIN 24
 #define LEDY_PIN 26
 #define LEDG_PIN 28
-#define LEDB_PIN 30
 // Saved states
 short int led_r = 0;
 short int led_y = 0;
 short int led_g = 0;
-short int led_b = 0;
 // Led error states
 enum LedState { OFF = 0, NONE = -1, ON = 1, BLINK = 2 };
 
@@ -383,7 +381,6 @@ float vel_gain = 2.5;
   OutPin ledr_pin(LEDR_PIN);
   OutPin ledy_pin(LEDY_PIN);
   OutPin ledg_pin(LEDG_PIN);
-  OutPin ledb_pin(LEDB_PIN);
 #endif
 
 // Initalize servo class
@@ -400,7 +397,7 @@ float vel_gain = 2.5;
 // void processMessage(byte* data, int length);
 void stop_all();
 void processSerialBuffer();
-void systemFault(bool criticalError = false,String fault_msg="", String error_msg="", LedState y =NONE, LedState g =NONE, LedState b=NONE);
+void systemFault(bool criticalError = false,String fault_msg="", String error_msg="", LedState g =NONE, LedState y =NONE, LedState r=NONE);
 void processMessage(byte *data, int length);
 
 #if IMU_SENSOR_ENABLED
@@ -432,7 +429,7 @@ void setup() {
   Serial.flush();
 
   // Set default led status
-  systemFault(false,"","", NONE, BLINK, BLINK);
+  systemFault(false,"","", BLINK, NONE, NONE);
 
   // Calibrate the IMU sensors drift factor
   #if IMU_SENSOR_ENABLED
@@ -568,7 +565,7 @@ void loop() {
           #endif
           if(RC_connection_established==false){
             RC_connection_established=true;
-            systemFault(false,"","", NONE, NONE, ON);
+            systemFault(false,"","", ON, NONE, NONE);
           }
         }
       #endif
@@ -577,9 +574,9 @@ void loop() {
       control_take_over=false;
       if(serial_connection_established==false) {
         #if SERIAL_COMM_TIMEOUT_FAULT
-          systemFault(true,"Serial communication timeout.","", NONE, NONE, BLINK);
+          systemFault(true,"Serial communication timeout.","", BLINK, NONE, NONE);
         #else 
-          systemFault(false,"Serial communication timeout.","", NONE, NONE, BLINK);
+          systemFault(false,"Serial communication timeout.","", BLINK, NONE, NONE);
         #endif
       }
     }
@@ -634,13 +631,13 @@ void loop() {
              act_bucket.vel_ctrl(5);
              aB_pos = act_bucket.update_pos("Act B: ");
              delay(5);
-             systemFault(false,"","Bucket past minimum. Fixing...", BLINK, NONE, NONE);
+             systemFault(false,"","Bucket past minimum. Fixing...", NONE, BLINK, NONE);
          }
          while (aB_pos > bucket_max) {
              act_bucket.vel_ctrl(-5);
              aB_pos = act_bucket.update_pos("Act B: ");
              delay(5);
-             systemFault(false,"","Bucket past maximum. Fixing...", BLINK, NONE, NONE);
+             systemFault(false,"","Bucket past maximum. Fixing...", NONE, BLINK, NONE);
          }
          act_bucket.stop();
      }
@@ -666,7 +663,7 @@ void loop() {
         prev_err = lr_err;
         lr_err = abs(aL_pos - aR_pos);
         if (lr_err > prev_err) systemFault(true,"Actuator diverging fix failed.","", NONE, NONE, NONE);
-        else systemFault(false,"","Actuator arms diverging, Fixing actuators...", BLINK, NONE, NONE);
+        else systemFault(false,"","Actuator arms diverging, Fixing actuators...", NONE, BLINK, NONE);
       }
       act_left.stop();
       act_right.stop();
@@ -843,7 +840,7 @@ void loop() {
   // System fully started turn on green led
   if(system_started==false){
     system_started=true;
-    systemFault(false,"","", NONE, ON, NONE);
+    systemFault(false,"","", ON, NONE, NONE);
   }
     // Run fault function every loop to update leds, and handle critical errors
   systemFault(false, "","", NONE, NONE, NONE);
@@ -1069,7 +1066,7 @@ void processMessage(byte *data, int length) {
   last_message_time=current_time;
   if(serial_connection_established==false && cmd_triggered==true){
     serial_connection_established=true;
-    systemFault(false,"","", NONE, NONE, ON);
+    systemFault(false,"","", ON, NONE, NONE);
   }
 }
 
@@ -1152,10 +1149,9 @@ void systemFault(bool criticalError,String fault_msg, String error_msg, LedState
       last_error_message_time = current_time;
     }
     #if ERROR_LEDS_ENABLED
-      ledr_pin.write(1);
-      ledy_pin.write(0);
       ledg_pin.write(0);
-      ledb_pin.write(0);
+      ledy_pin.write(0);
+      ledr_pin.write(2);
     #endif
     }
     return;
@@ -1168,11 +1164,11 @@ void systemFault(bool criticalError,String fault_msg, String error_msg, LedState
   // Update led states
   if(y!=NONE) led_y = y;
   if(g!=NONE) led_g = g;
-  if(b!=NONE) led_b = b;
+  if(r!=NONE) led_r = r;
   #if ERROR_LEDS_ENABLED
     updateLed(ledg_pin, led_g);
     updateLed(ledy_pin, led_y);
-    updateLed(ledb_pin, led_b);
+    updateLed(ledr_pin, led_r);
   #endif
 }
 
