@@ -1,0 +1,15 @@
+[Unit]
+Description=Wi-Fi autoconnect (priority network, weblogin, hotspot fallback)
+After=NetworkManager.service
+Wants=NetworkManager.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/advanced-wifi-autoconnect.sh
+Restart=always
+RestartSec=5
+KillMode=mixed
+TimeoutStopSec=10
+
+[Install]
+WantedBy=multi-user.target

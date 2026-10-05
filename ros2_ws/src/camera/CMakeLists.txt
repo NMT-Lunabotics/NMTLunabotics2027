@@ -16,6 +16,8 @@ install(DIRECTORY launch config
 
 install(PROGRAMS
   camera/camera_manager.py
+  camera/simple_decoder.py
+  camera/stream_viewer.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

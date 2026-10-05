@@ -3,7 +3,7 @@
 <package format="3">
   <name>camera</name>
   <version>0.0.0</version>
-  <description>TODO</description>
+  <description>Advanced camera manager. Supports multiple cameras and multiple multi-purpose video feeds, camera switching, compression, apriltag localzing, and many more camera settings.</description>
   <maintainer email="benjamin.peterson@student.nmt.edu">Benjamin</maintainer>
   <license>TODO: License declaration</license>
 
@@ -13,6 +13,7 @@
   <depend>rclpy</depend>
   <depend>std_msgs</depend>
   <depend>sensor_msgs</depend>
+  <depend>std_srvs</depend>
 
   <build_depend>rosidl_default_generators</build_depend>
   <exec_depend>rosidl_default_runtime</exec_depend>
