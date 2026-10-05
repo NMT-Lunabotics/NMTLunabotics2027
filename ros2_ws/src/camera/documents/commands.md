@@ -29,3 +29,6 @@ ros2 param set /camera_manager feeds.primary.camera0.adjustments.right_crop 5
 ### April tag enable/disable and visualizer
 ros2 param set /camera_manager feeds.rtabmap.rgb_feed.apriltag_localizer.enabled true
 ros2 param set /camera_manager feeds.rtabmap.rgb_feed.apriltag_localizer.overlay false
+
+
+ros2 param set /camera_manager feeds.primary.camera0.apriltag_localizer.overlay false

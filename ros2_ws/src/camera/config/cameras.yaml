@@ -46,7 +46,7 @@ camera_manager:
           adjustments:
             width: 424                             # Camera resulution x
             height: 240                            # Camera resulution y
-            framerate: 15                          # Camera framerate or sensor sample rate
+            framerate: 25                          # Camera framerate or sensor sample rate
             grayscale: false                       # Changes camera into grayscale to reduce bandwidth
             horizontal_flip: false                 # Flip camera horizontally
             vertical_flip: false                   # Flip camera vertically
@@ -54,10 +54,26 @@ camera_manager:
             right_crop: 0                          # Crop stream by x% from right
             top_crop: 0                            # Crop stream by y% from top
             bottom_crop: 0                         # Crop stream by y% from bottom
+          apriltag_localizer:
+            enabled: true                          # Enable apriltag_localizer for this stream
+            overlay: false                         # Enable overlay ontop video feed
+            tags:                                  # List of tags used during localizing
+              startzone:
+                enabled: true                      # Enable spcific tag
+                id: 0                              # Id of enabled tag
+                x: 1.0                             # x location of apriltag (m)
+                y: 1.0                             # y location of apriltag (m)
+                yaw: 180.0                         # yaw of apriltag (deg)
+                marker_length: 0.269               # Marker size (m)
+                max_distance: 3.0                  # Ignore tag seen farther then max distance
+                min_area_px: 400                   # Tag must be certain size to be used (px^2)
+                pos_sigma: 0.03                    # Position uncertainty (m)
+                yaw_sigma: 0.03                    # Heading uncertainty (deg)
+                min_interval: 0.5                  # Attempted update interval for corrections
       # rtabmap camera feeds
       rtabmap:
         rgb_feed:
-          enabled: false
+          enabled: true
           camera:
           - 1
           type: rgb
@@ -92,7 +108,7 @@ camera_manager:
                 yaw_sigma: 0.03                    # Heading uncertainty (deg)
                 min_interval: 0.5                  # Attempted update interval for corrections
         depth_feed:
-          enabled: false
+          enabled: true
           camera:
           - 1
           type: depth
@@ -114,7 +130,7 @@ camera_manager:
           type: inferred2
           topic: /inferred2
         sensor_feed:
-          enabled: false
+          enabled: true
           camera:
           - 1
           type: imu

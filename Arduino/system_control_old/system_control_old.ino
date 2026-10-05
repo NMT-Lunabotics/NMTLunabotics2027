@@ -9,6 +9,14 @@
   #define CURRENT_RIGHT_MOTOR A9
   #define CURRENT_ARM_ACTUATORS A11
   #define CURRENT_BUCKET_ACTUATORS A10
+
+  #define CURRENT_TOP_MOTOR_DRIVER A7
+  #define VELOCITY_TOP_MOTOR_DRIVER A6
+  #define STATE_TOP_MOTOR_DRIVER A5
+
+  #define CURRENT_BOTTOM_MOTOR_DRIVER A13
+  #define VELOCITY_BOTTOM_MOTOR_DRIVER A14
+  #define STATE_BOTTOM_MOTOR_DRIVER A15
 #endif
 
 //------------------------------------------------------------
@@ -297,12 +305,44 @@ bool system_started = false;
 //int rc_startup_state=0;
 #if CURRENT_LOGGING==1
   unsigned long last_amp_time = 0;
-  const int amp_update_rate = 20; // hz
+  const int amp_update_rate = 20;
+  const int amp_window_size = 20;
   float amp_average_left_motor = 0;
   float amp_average_right_motor = 0;
   float amp_average_arm_actuators = 0;
   float amp_average_bucket_actuators = 0;
+  float amp_average_top_driver = 0;
+  float amp_average_bottom_driver = 0;
+  float vel_average_top_driver = 0;
+  float vel_average_bottom_driver = 0;
+  bool fault_top_driver = false;
+  bool fault_bottom_driver = false;
   int amp_tick_count = 0;
+
+  const float CURRENT_SCALE = 13.5;
+  const int DRIVER_FAULT_THRESHOLD = 512;
+  const bool DRIVER_FAULT_ACTIVE_HIGH = false;
+
+  const unsigned long CALIBRATION_TIME_MS = 10000;
+  unsigned long calibration_start_time = 0;
+  bool calibration_done = false;
+  long calibration_sample_count = 0;
+
+  float cal_sum_left_motor = 0;
+  float cal_sum_right_motor = 0;
+  float cal_sum_arm_actuators = 0;
+  float cal_sum_bucket_actuators = 0;
+  float cal_sum_top_driver = 0;
+  float cal_sum_bottom_driver = 0;
+
+  float offset_left_motor = 0;
+  float offset_right_motor = 0;
+  float offset_arm_actuators = 0;
+  float offset_bucket_actuators = 0;
+  float offset_top_driver = 0;
+  float offset_bottom_driver = 0;
+
+  unsigned long debug_last_time = 0;
 #endif
 
 #if SENSOR_OUTPUT == 7
@@ -862,53 +902,116 @@ void loop() {
 
 
 #if CURRENT_LOGGING==1
-  if(current_time - last_amp_time >= 1000 / amp_update_rate){
-    last_amp_time = current_time;
-    amp_tick_count+=1;
+  unsigned long amp_now = millis();
 
-    amp_average_left_motor+=analogRead(CURRENT_LEFT_MOTOR);
-    amp_average_right_motor+=analogRead(CURRENT_RIGHT_MOTOR);
-    amp_average_arm_actuators+=analogRead(CURRENT_ARM_ACTUATORS);
-    amp_average_bucket_actuators+=analogRead(CURRENT_BUCKET_ACTUATORS);
-    if(amp_tick_count>=20){
-      amp_tick_count=0;
+  if(amp_now - debug_last_time >= 1000){
+    debug_last_time = amp_now;
+    Serial.print("LOG ALIVE t=");
+    Serial.print(amp_now);
+    Serial.print(" cal=");
+    Serial.println(calibration_done);
+  }
 
-      amp_average_left_motor=abs(amp_average_left_motor/amp_update_rate);
-      //Serial.println(amp_average_left_motor);
-      amp_average_left_motor=(amp_average_left_motor - 530.0) / 13.5;
-      if(amp_average_left_motor > 0.25){
-        Serial.print("LM:");
+  if(amp_now - last_amp_time >= 1000 / amp_update_rate){
+    last_amp_time = amp_now;
+
+    if(!calibration_done){
+      if(calibration_sample_count == 0){
+        calibration_start_time = amp_now;
+        Serial.println("CALIBRATION START");
+      }
+      calibration_sample_count += 1;
+
+      cal_sum_left_motor += analogRead(CURRENT_LEFT_MOTOR);
+      cal_sum_right_motor += analogRead(CURRENT_RIGHT_MOTOR);
+      cal_sum_arm_actuators += analogRead(CURRENT_ARM_ACTUATORS);
+      cal_sum_bucket_actuators += analogRead(CURRENT_BUCKET_ACTUATORS);
+      cal_sum_top_driver += analogRead(CURRENT_TOP_MOTOR_DRIVER);
+      cal_sum_bottom_driver += analogRead(CURRENT_BOTTOM_MOTOR_DRIVER);
+
+      if(amp_now - calibration_start_time >= CALIBRATION_TIME_MS){
+        offset_left_motor = cal_sum_left_motor / calibration_sample_count;
+        offset_right_motor = cal_sum_right_motor / calibration_sample_count;
+        offset_arm_actuators = cal_sum_arm_actuators / calibration_sample_count;
+        offset_bucket_actuators = cal_sum_bucket_actuators / calibration_sample_count;
+        offset_top_driver = cal_sum_top_driver / calibration_sample_count;
+        offset_bottom_driver = cal_sum_bottom_driver / calibration_sample_count;
+
+        calibration_done = true;
+        Serial.println("CALIBRATION DONE");
+      }
+    }
+    else{
+      amp_tick_count += 1;
+
+      amp_average_left_motor += analogRead(CURRENT_LEFT_MOTOR);
+      amp_average_right_motor += analogRead(CURRENT_RIGHT_MOTOR);
+      amp_average_arm_actuators += analogRead(CURRENT_ARM_ACTUATORS);
+      amp_average_bucket_actuators += analogRead(CURRENT_BUCKET_ACTUATORS);
+      amp_average_top_driver += analogRead(CURRENT_TOP_MOTOR_DRIVER);
+      amp_average_bottom_driver += analogRead(CURRENT_BOTTOM_MOTOR_DRIVER);
+      vel_average_top_driver += analogRead(VELOCITY_TOP_MOTOR_DRIVER);
+      vel_average_bottom_driver += analogRead(VELOCITY_BOTTOM_MOTOR_DRIVER);
+
+      bool top_state_high = analogRead(STATE_TOP_MOTOR_DRIVER) > DRIVER_FAULT_THRESHOLD;
+      bool bottom_state_high = analogRead(STATE_BOTTOM_MOTOR_DRIVER) > DRIVER_FAULT_THRESHOLD;
+      if(top_state_high == DRIVER_FAULT_ACTIVE_HIGH) fault_top_driver = true;
+      if(bottom_state_high == DRIVER_FAULT_ACTIVE_HIGH) fault_bottom_driver = true;
+
+      if(amp_tick_count >= amp_window_size){
+        amp_tick_count = 0;
+
+        amp_average_left_motor = abs(amp_average_left_motor / amp_window_size - offset_left_motor) / CURRENT_SCALE;
+        Serial.print("LEFTMOTOR:");
         Serial.println(amp_average_left_motor);
-      }
 
-      amp_average_right_motor=abs(amp_average_right_motor/amp_update_rate);
-      //Serial.println(amp_average_right_motor);
-      amp_average_right_motor=(amp_average_right_motor - 460.0) / 13.5;
-      if(amp_average_right_motor > 0.25){
-        Serial.print("RM:");
+        amp_average_right_motor = abs(amp_average_right_motor / amp_window_size - offset_right_motor) / CURRENT_SCALE;
+        Serial.print("RIGHTMOTOR:");
         Serial.println(amp_average_right_motor);
-      }
 
-      amp_average_arm_actuators=abs(amp_average_arm_actuators/amp_update_rate);
-      //Serial.println(amp_average_arm_actuators);
-      amp_average_arm_actuators=(amp_average_arm_actuators - 530.0) / 13.5;
-      if(amp_average_arm_actuators > 0.25){
-        Serial.print("A:");
+        amp_average_arm_actuators = abs(amp_average_arm_actuators / amp_window_size - offset_arm_actuators) / CURRENT_SCALE;
+        Serial.print("ARMACTUATORS:");
         Serial.println(amp_average_arm_actuators);
-      }
 
-      amp_average_bucket_actuators=abs(amp_average_bucket_actuators/amp_update_rate);
-      //Serial.println(amp_average_bucket_actuators);
-      amp_average_bucket_actuators=(amp_average_bucket_actuators - 530.0) / 13.5;
-      if(amp_average_bucket_actuators > 0.25){
-        Serial.print("B:");
+        amp_average_bucket_actuators = abs(amp_average_bucket_actuators / amp_window_size - offset_bucket_actuators) / CURRENT_SCALE;
+        Serial.print("BUCKETACTUATORS:");
         Serial.println(amp_average_bucket_actuators);
+
+        amp_average_top_driver = abs(amp_average_top_driver / amp_window_size - offset_top_driver) / CURRENT_SCALE;
+        Serial.print("TOPDRIVERCURRENT:");
+        Serial.println(amp_average_top_driver);
+
+        vel_average_top_driver /= amp_window_size;
+        Serial.print("TOPDRIVERVELOCITY:");
+        Serial.println(vel_average_top_driver);
+
+        Serial.print("TOPDRIVERFAULT:");
+        Serial.println(fault_top_driver ? 1 : 0);
+
+        amp_average_bottom_driver = abs(amp_average_bottom_driver / amp_window_size - offset_bottom_driver) / CURRENT_SCALE;
+        Serial.print("BOTTOMDRIVERCURRENT:");
+        Serial.println(amp_average_bottom_driver);
+
+        vel_average_bottom_driver /= amp_window_size;
+        Serial.print("BOTTOMDRIVERVELOCITY:");
+        Serial.println(vel_average_bottom_driver);
+
+        Serial.print("BOTTOMDRIVERFAULT:");
+        Serial.println(fault_bottom_driver ? 1 : 0);
+
+        Serial.println("");
+
+        amp_average_left_motor = 0;
+        amp_average_right_motor = 0;
+        amp_average_arm_actuators = 0;
+        amp_average_bucket_actuators = 0;
+        amp_average_top_driver = 0;
+        amp_average_bottom_driver = 0;
+        vel_average_top_driver = 0;
+        vel_average_bottom_driver = 0;
+        fault_top_driver = false;
+        fault_bottom_driver = false;
       }
-      amp_average_left_motor = 0;
-      amp_average_right_motor = 0;
-      amp_average_arm_actuators = 0;
-      amp_average_bucket_actuators = 0;
-      Serial.println("");
     }
   }
 #endif
