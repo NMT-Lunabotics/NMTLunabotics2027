@@ -1,0 +1,15 @@
+[Unit]
+Description=Arduino serial data recorder
+After=multi-user.target
+
+[Service]
+Type=simple
+User=jetson
+Group=dialout
+ExecStart=/usr/bin/python3 /usr/local/bin/serial_recorder.py
+Environment=SERIAL_RECORDER_CONF=/etc/serial_recorder.conf
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
