@@ -1,0 +1,47 @@
+[0.007s] Invoking command in '/home/amaya/NMTLunabotics2027/ros2_ws/build/camera': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake /home/amaya/NMTLunabotics2027/ros2_ws/src/camera -DCMAKE_INSTALL_PREFIX=/home/amaya/NMTLunabotics2027/ros2_ws/install/camera
+[0.113s] -- The C compiler identification is GNU 11.4.0
+[0.188s] -- The CXX compiler identification is GNU 11.4.0
+[0.193s] -- Detecting C compiler ABI info
+[0.277s] -- Detecting C compiler ABI info - done
+[0.287s] -- Check for working C compiler: /usr/bin/cc - skipped
+[0.288s] -- Detecting C compile features
+[0.289s] -- Detecting C compile features - done
+[0.294s] -- Detecting CXX compiler ABI info
+[0.369s] -- Detecting CXX compiler ABI info - done
+[0.373s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[0.373s] -- Detecting CXX compile features
+[0.373s] -- Detecting CXX compile features - done
+[0.375s] -- Found ament_cmake: 1.3.14 (/opt/ros/humble/share/ament_cmake/cmake)
+[0.452s] -- Found Python3: /usr/bin/python3 (found version "3.10.12") found components: Interpreter 
+[0.514s] -- Found rclcpp: 16.0.19 (/opt/ros/humble/share/rclcpp/cmake)
+[0.560s] -- Found rosidl_generator_c: 3.1.9 (/opt/ros/humble/share/rosidl_generator_c/cmake)
+[0.566s] -- Found rosidl_adapter: 3.1.9 (/opt/ros/humble/share/rosidl_adapter/cmake)
+[0.574s] -- Found rosidl_generator_cpp: 3.1.9 (/opt/ros/humble/share/rosidl_generator_cpp/cmake)
+[0.583s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[0.593s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[0.631s] -- Found rmw_implementation_cmake: 6.1.3 (/opt/ros/humble/share/rmw_implementation_cmake/cmake)
+[0.633s] -- Found rmw_fastrtps_cpp: 6.2.10 (/opt/ros/humble/share/rmw_fastrtps_cpp/cmake)
+[0.707s] -- Found OpenSSL: /usr/lib/x86_64-linux-gnu/libcrypto.so (found version "3.0.2")  
+[0.727s] -- Found FastRTPS: /opt/ros/humble/include  
+[0.748s] -- Using RMW implementation 'rmw_fastrtps_cpp' as default
+[0.761s] -- Looking for pthread.h
+[0.855s] -- Looking for pthread.h - found
+[0.856s] -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+[0.909s] -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+[0.910s] -- Found Threads: TRUE  
+[0.954s] -- Found rosidl_default_generators: 1.2.1 (/opt/ros/humble/share/rosidl_default_generators/cmake)
+[0.992s] -- Configuring done
+[0.994s] -- Generating done
+[0.995s] -- Build files have been written to: /home/amaya/NMTLunabotics2027/ros2_ws/build/camera
+[0.999s] Invoked command in '/home/amaya/NMTLunabotics2027/ros2_ws/build/camera' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake /home/amaya/NMTLunabotics2027/ros2_ws/src/camera -DCMAKE_INSTALL_PREFIX=/home/amaya/NMTLunabotics2027/ros2_ws/install/camera
+[1.001s] Invoking command in '/home/amaya/NMTLunabotics2027/ros2_ws/build/camera': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /home/amaya/NMTLunabotics2027/ros2_ws/build/camera -- -j32 -l32
+[1.040s] Invoked command in '/home/amaya/NMTLunabotics2027/ros2_ws/build/camera' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /home/amaya/NMTLunabotics2027/ros2_ws/build/camera -- -j32 -l32
+[1.050s] Invoking command in '/home/amaya/NMTLunabotics2027/ros2_ws/build/camera': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /home/amaya/NMTLunabotics2027/ros2_ws/build/camera
+[1.055s] -- Install configuration: ""
+[1.055s] [31mCMake Error at cmake_install.cmake:46 (file):
+[1.055s]   file INSTALL cannot find
+[1.055s]   "/home/amaya/NMTLunabotics2027/ros2_ws/src/camera/launch": No such file or
+[1.055s]   directory.
+[1.055s] 
+[1.055s] [0m
+[1.056s] Invoked command in '/home/amaya/NMTLunabotics2027/ros2_ws/build/camera' returned '1': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /home/amaya/NMTLunabotics2027/ros2_ws/build/camera

@@ -1,0 +1,34 @@
+[0.010s] Invoking command in '/home/amaya/NMTLunabotics2027/ros2_ws/build/camera': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_voltage:/home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui:/opt/ros/humble /usr/bin/cmake --build /home/amaya/NMTLunabotics2027/ros2_ws/build/camera -- -j32 -l32
+[0.240s] Invoked command in '/home/amaya/NMTLunabotics2027/ros2_ws/build/camera' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_voltage:/home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui:/opt/ros/humble /usr/bin/cmake --build /home/amaya/NMTLunabotics2027/ros2_ws/build/camera -- -j32 -l32
+[0.247s] Invoking command in '/home/amaya/NMTLunabotics2027/ros2_ws/build/camera': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_voltage:/home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui:/opt/ros/humble /usr/bin/cmake --install /home/amaya/NMTLunabotics2027/ros2_ws/build/camera
+[0.253s] -- Install configuration: ""
+[0.253s] -- Up-to-date: /home/amaya/NMTLunabotics2027/ros2_ws/install/camera/share/camera//launch
+[0.253s] -- Up-to-date: /home/amaya/NMTLunabotics2027/ros2_ws/install/camera/share/camera//launch/usb_camera_launch.py
+[0.253s] -- Up-to-date: /home/amaya/NMTLunabotics2027/ros2_ws/install/camera/share/camera//launch/usb_camera_launch_compressed.py
+[0.253s] -- Up-to-date: /home/amaya/NMTLunabotics2027/ros2_ws/install/camera/share/camera//launch/view_camera_launch.py
+[0.253s] -- Up-to-date: /home/amaya/NMTLunabotics2027/ros2_ws/install/camera/share/camera//launch/realsense_launch.py
+[0.253s] -- Up-to-date: /home/amaya/NMTLunabotics2027/ros2_ws/install/camera/share/camera//config
+[0.253s] -- Up-to-date: /home/amaya/NMTLunabotics2027/ros2_ws/install/camera/share/camera//config/cameras.yaml
+[0.253s] -- Up-to-date: /home/amaya/NMTLunabotics2027/ros2_ws/install/camera/share/camera//config/realsense_cameras.yml
+[0.253s] -- Up-to-date: /home/amaya/NMTLunabotics2027/ros2_ws/install/camera/share/camera//config/pc_cameras.yaml
+[0.253s] -- Up-to-date: /home/amaya/NMTLunabotics2027/ros2_ws/install/camera/share/camera//config/backup.yaml
+[0.253s] -- Up-to-date: /home/amaya/NMTLunabotics2027/ros2_ws/install/camera/lib/camera/camera_manager.py
+[0.253s] -- Up-to-date: /home/amaya/NMTLunabotics2027/ros2_ws/install/camera/lib/camera/simple_decoder.py
+[0.253s] -- Up-to-date: /home/amaya/NMTLunabotics2027/ros2_ws/install/camera/lib/camera/stream_viewer.py
+[0.253s] -- Up-to-date: /home/amaya/NMTLunabotics2027/ros2_ws/install/camera/share/ament_index/resource_index/package_run_dependencies/camera
+[0.253s] -- Up-to-date: /home/amaya/NMTLunabotics2027/ros2_ws/install/camera/share/ament_index/resource_index/parent_prefix_path/camera
+[0.253s] -- Up-to-date: /home/amaya/NMTLunabotics2027/ros2_ws/install/camera/share/camera/environment/ament_prefix_path.sh
+[0.253s] -- Up-to-date: /home/amaya/NMTLunabotics2027/ros2_ws/install/camera/share/camera/environment/ament_prefix_path.dsv
+[0.253s] -- Up-to-date: /home/amaya/NMTLunabotics2027/ros2_ws/install/camera/share/camera/environment/path.sh
+[0.253s] -- Up-to-date: /home/amaya/NMTLunabotics2027/ros2_ws/install/camera/share/camera/environment/path.dsv
+[0.253s] -- Up-to-date: /home/amaya/NMTLunabotics2027/ros2_ws/install/camera/share/camera/local_setup.bash
+[0.253s] -- Up-to-date: /home/amaya/NMTLunabotics2027/ros2_ws/install/camera/share/camera/local_setup.sh
+[0.253s] -- Up-to-date: /home/amaya/NMTLunabotics2027/ros2_ws/install/camera/share/camera/local_setup.zsh
+[0.253s] -- Up-to-date: /home/amaya/NMTLunabotics2027/ros2_ws/install/camera/share/camera/local_setup.dsv
+[0.253s] -- Installing: /home/amaya/NMTLunabotics2027/ros2_ws/install/camera/share/camera/package.dsv
+[0.253s] -- Up-to-date: /home/amaya/NMTLunabotics2027/ros2_ws/install/camera/share/ament_index/resource_index/packages/camera
+[0.253s] -- Up-to-date: /home/amaya/NMTLunabotics2027/ros2_ws/install/camera/share/camera/cmake/ament_cmake_export_dependencies-extras.cmake
+[0.253s] -- Up-to-date: /home/amaya/NMTLunabotics2027/ros2_ws/install/camera/share/camera/cmake/cameraConfig.cmake
+[0.253s] -- Up-to-date: /home/amaya/NMTLunabotics2027/ros2_ws/install/camera/share/camera/cmake/cameraConfig-version.cmake
+[0.253s] -- Up-to-date: /home/amaya/NMTLunabotics2027/ros2_ws/install/camera/share/camera/package.xml
+[0.255s] Invoked command in '/home/amaya/NMTLunabotics2027/ros2_ws/build/camera' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_voltage:/home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui:/opt/ros/humble /usr/bin/cmake --install /home/amaya/NMTLunabotics2027/ros2_ws/build/camera

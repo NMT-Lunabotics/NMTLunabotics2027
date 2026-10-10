@@ -14,18 +14,19 @@ class IntelSubscriber(Node):
     def __init__(self, send_image = None):
         # RGB Subscriber
         super().__init__('intel_subscriber')
-        self.subscription_rgb = self.create_subscription(Image,"/camera/camera/color/image_raw", self.rgb_frame_callback, 10)
+        self.subscription_rgb = self.create_subscription(Image,"/rgb", self.rgb_frame_callback, 10)
         self.bridge_rgb = CvBridge()
 
         # Depth Subscriber
-        self.subscription_depth = self.create_subscription(Image, "/camera/camera/depth/image_rect_raw", self.depth_frame_callback, 10)
+        self.subscription_depth = self.create_subscription(Image, "/depth", self.depth_frame_callback, 10)
         self.bridge_depth = CvBridge()
 
         self.send_image = send_image
 
     def rgb_frame_callback(self, data):
         self.get_logger().warning('Received RGB frame')
-        current_frame = self.bridge_rgb.imgmsg_to_cv2(data)
+        current_frame = self.bridge_rgb.imgmsg_to_cv2(data, desired_encoding='bgr8')
+        current_frame = cv2.cvtColor(current_frame, cv2.COLOR_BGR2RGB)  # Convert BGR to RGB
         height, width, channels = current_frame.shape
         bytes_per_line = channels * width
 

@@ -1,0 +1,138 @@
+camera_manager:
+  ros__parameters:
+    cameras:
+      camera0:
+        uuid: /dev/video0                          # Camera connection address, supports 'realsense_uuid' or /dev/video
+        id: 0                                      # Assigined camera id used by feeds
+        camera_info_topic: ''                      # Return camera info topic, leave blank for no data return
+      camera1:
+        uuid: '213522253528'
+        id: 1
+        camera_info_topic: /camera1_info
+      camera2:
+        uuid: '311322301206'
+        id: 2
+        camera_info_topic: /camera2_info
+      camera3:
+        uuid: '306322300659'
+        id: 3
+        camera_info_topic: /camera3_info
+        location:                                  # Location of camera center relative to base_link
+          position_offset:                         # Camera position offset (m) [x, y, z]
+          - 0.0
+          - 0.0
+          - 0.0
+          angle_offset:                            # Canera angle offset (deg) [pitch, yaw, roll]
+          - 0.0
+          - 0.0
+          - 0.0
+    feeds:
+      # Primary user camera feed
+      primary:
+        camera0:
+          enabled: true                            # Enable camera stream
+          camera:                                  # Cameras to use (camera id), add multiple to array for live switching (first camera in array video is pushed to stream, others idle in background)
+          - 1
+          - 0
+          type: rgb                                # Camera feed type: rgb, depth, infered, imu
+          topic: /stream                           # Camera output topic
+          compression:
+            ros_compression: 0                     # Converts video topic into ros compressed topic, (0=false topic only, 1=true compression_topic, 2=both topic and compression_topic)
+            compression_topic: ''                  # Compressed topic name, if left blank /topic/compressed will be used
+            codec: h265                            # Image compresser (h264, libx264, h265, libx265) h265 is 30%-40% smaller at same quaility but has more latency and more cpu load
+            avg_bitrate_kbps: 200                  # Average bitrate encoder will try to target
+            max_bitrate_kbps: 250                  # Max allowed bitrate for encoder
+            gop: 48                                # Number of p-frames between frames, sending lots of full frames is expenive but changes how quickly decoder starts
+          adjustments:
+            width: 424                             # Camera resulution x
+            height: 240                            # Camera resulution y
+            framerate: 25                          # Camera framerate or sensor sample rate
+            grayscale: false                       # Changes camera into grayscale to reduce bandwidth
+            horizontal_flip: false                 # Flip camera horizontally
+            vertical_flip: false                   # Flip camera vertically
+            left_crop: 0                           # Crop stream by x% from left
+            right_crop: 0                          # Crop stream by x% from right
+            top_crop: 0                            # Crop stream by y% from top
+            bottom_crop: 0                         # Crop stream by y% from bottom
+          apriltag_localizer:
+            enabled: true                          # Enable apriltag_localizer for this stream
+            overlay: false                         # Enable overlay ontop video feed
+            tags:                                  # List of tags used during localizing
+              startzone:
+                enabled: true                      # Enable spcific tag
+                id: 0                              # Id of enabled tag
+                x: 1.0                             # x location of apriltag (m)
+                y: 1.0                             # y location of apriltag (m)
+                yaw: 180.0                         # yaw of apriltag (deg)
+                marker_length: 0.269               # Marker size (m)
+                max_distance: 3.0                  # Ignore tag seen farther then max distance
+                min_area_px: 400                   # Tag must be certain size to be used (px^2)
+                pos_sigma: 0.03                    # Position uncertainty (m)
+                yaw_sigma: 0.03                    # Heading uncertainty (deg)
+                min_interval: 0.5                  # Attempted update interval for corrections
+      # rtabmap camera feeds
+      rtabmap:
+        rgb_feed:
+          enabled: true
+          camera:
+          - 1
+          type: rgb
+          topic: /rgb
+          sensor_location:                         # Indavidual sensor offset reative to camera location
+            position_offset:                       # Sensor position offset (m) [x, y, z]
+            - 0.0
+            - 0.0
+            - 0.0
+            angle_offset:                          # Sensor angle offset (deg) [pitch, yaw, roll]
+            - 0.0
+            - 0.0
+            - 0.0
+          adjustments:
+            width: 320
+            height: 210
+            framerate: 24
+          apriltag_localizer:
+            enabled: false                         # Enable apriltag_localizer for this stream
+            overlay: true                          # Enable overlay ontop video feed
+            tags:                                  # List of tags used during localizing
+              startzone:
+                enabled: true                      # Enable spcific tag
+                id: 0                              # Id of enabled tag
+                x: 1.0                             # x location of apriltag (m)
+                y: 1.0                             # y location of apriltag (m)
+                yaw: 180.0                         # yaw of apriltag (deg)
+                marker_length: 0.269               # Marker size (m)
+                max_distance: 3.0                  # Ignore tag seen farther then max distance
+                min_area_px: 400                   # Tag must be certain size to be used (px^2)
+                pos_sigma: 0.03                    # Position uncertainty (m)
+                yaw_sigma: 0.03                    # Heading uncertainty (deg)
+                min_interval: 0.5                  # Attempted update interval for corrections
+        depth_feed:
+          enabled: true
+          camera:
+          - 1
+          type: depth
+          topic: /depth
+          adjustments:
+            width: 320
+            height: 210
+            framerate: 24
+        inferred_feed1:
+          enabled: false
+          camera:
+          - 1
+          type: inferred1
+          topic: /inferred1
+        inferred_feed2:
+          enabled: false
+          camera:
+          - 1
+          type: inferred2
+          topic: /inferred2
+        sensor_feed:
+          enabled: true
+          camera:
+          - 1
+          type: imu
+          topic: /imu
+          fps: 200

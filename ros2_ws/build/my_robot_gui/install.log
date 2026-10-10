@@ -1,9 +1,13 @@
 /home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/lib/python3.10/site-packages/my_robot_gui/layout_one.py
-/home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/lib/python3.10/site-packages/my_robot_gui/subscriber.py
+/home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/lib/python3.10/site-packages/my_robot_gui/ros_worker.py
+/home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/lib/python3.10/site-packages/my_robot_gui/battery_subscriber.py
+/home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/lib/python3.10/site-packages/my_robot_gui/intel_subscriber.py
 /home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/lib/python3.10/site-packages/my_robot_gui/__init__.py
 /home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/lib/python3.10/site-packages/my_robot_gui/main.py
 /home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/lib/python3.10/site-packages/my_robot_gui/__pycache__/layout_one.cpython-310.pyc
-/home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/lib/python3.10/site-packages/my_robot_gui/__pycache__/subscriber.cpython-310.pyc
+/home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/lib/python3.10/site-packages/my_robot_gui/__pycache__/ros_worker.cpython-310.pyc
+/home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/lib/python3.10/site-packages/my_robot_gui/__pycache__/battery_subscriber.cpython-310.pyc
+/home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/lib/python3.10/site-packages/my_robot_gui/__pycache__/intel_subscriber.cpython-310.pyc
 /home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/lib/python3.10/site-packages/my_robot_gui/__pycache__/__init__.cpython-310.pyc
 /home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/lib/python3.10/site-packages/my_robot_gui/__pycache__/main.cpython-310.pyc
 /home/amaya/NMTLunabotics2027/ros2_ws/install/my_robot_gui/share/ament_index/resource_index/packages/my_robot_gui

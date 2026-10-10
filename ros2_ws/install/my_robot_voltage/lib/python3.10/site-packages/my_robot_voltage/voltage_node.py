@@ -9,12 +9,12 @@ class VoltagePublisher(Node):
         super().__init__('voltage_publisher') # identifies running ROS node
 
         self.voltage_pub = self.create_publisher(Float32, '/battery_voltage', 10) #/battery_voltage is the name of the ROS topic
-        timer_period = 20 #seconds
+        timer_period = 5 #seconds
         self.timer = self.create_timer(timer_period, self.publish_data)
 
     def publish_data(self):
         voltage_float = Float32()
-        voltage_float.data = random.random()
+        voltage_float.data = random.uniform(23.0,25.2)
 
         print(f"PUBLISHING: {voltage_float.data:.2f} V")
         self.voltage_pub.publish(voltage_float)

@@ -1,0 +1,6 @@
+Invoking command in '/home/amaya/NMTLunabotics2027/ros2_ws/build/camera': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake /home/amaya/NMTLunabotics2027/ros2_ws/src/camera -DCMAKE_INSTALL_PREFIX=/home/amaya/NMTLunabotics2027/ros2_ws/install/camera
+Invoked command in '/home/amaya/NMTLunabotics2027/ros2_ws/build/camera' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake /home/amaya/NMTLunabotics2027/ros2_ws/src/camera -DCMAKE_INSTALL_PREFIX=/home/amaya/NMTLunabotics2027/ros2_ws/install/camera
+Invoking command in '/home/amaya/NMTLunabotics2027/ros2_ws/build/camera': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /home/amaya/NMTLunabotics2027/ros2_ws/build/camera -- -j32 -l32
+Invoked command in '/home/amaya/NMTLunabotics2027/ros2_ws/build/camera' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /home/amaya/NMTLunabotics2027/ros2_ws/build/camera -- -j32 -l32
+Invoking command in '/home/amaya/NMTLunabotics2027/ros2_ws/build/camera': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /home/amaya/NMTLunabotics2027/ros2_ws/build/camera
+Invoked command in '/home/amaya/NMTLunabotics2027/ros2_ws/build/camera' returned '1': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /home/amaya/NMTLunabotics2027/ros2_ws/build/camera

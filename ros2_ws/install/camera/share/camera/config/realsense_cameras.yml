@@ -1,0 +1,82 @@
+cameras:
+  - uuid: "213522253528"
+    id: 0
+    rgb: true
+    depth: false
+
+    stream:
+      enabled: false
+      width: 80
+      height: 60
+      fps: 30
+
+      crop:
+        x: 80
+        y: 0
+        width: 80
+        height: 60
+
+    rgb_compressed:
+      width: 80
+      height: 60
+      fps: 24
+      jpeg_quality: 30
+
+    imu:
+      enabled: true
+      frequency: 200
+
+
+  - uuid: "311322301206"
+    id: 1
+    rgb: true
+    depth: false
+
+    stream:
+      enabled: false
+      width: 640
+      height: 480
+      fps: 30
+
+      crop:
+        x: 0
+        y: 0
+        width: 640
+        height: 480
+
+    rgb_compressed:
+      width: 80
+      height: 60
+      fps: 24
+      jpeg_quality: 30
+
+    imu:
+      enabled: false
+      frequency: 200
+
+  - uuid: "306322300659"
+    id: 1
+    rgb: true
+    depth: false
+
+    stream:
+      enabled: false
+      width: 640
+      height: 480
+      fps: 30
+
+      crop:
+        x: 0
+        y: 0
+        width: 640
+        height: 480
+
+    rgb_compressed:
+      width: 80
+      height: 60
+      fps: 24
+      jpeg_quality: 30
+
+    imu:
+      enabled: false
+      frequency: 200

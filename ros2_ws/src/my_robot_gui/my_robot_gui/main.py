@@ -1,5 +1,8 @@
-# GUI Imports
 import sys
+
+import subprocess
+
+
 from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QLabel, QSizePolicy, QPushButton, QTextEdit
 from PyQt5.QtGui import QPixmap
 from layout_one import Color
@@ -78,11 +81,9 @@ class MainWindow(QMainWindow):
        sensor_buttons.addWidget(ir_button)
 
        # BUTTON SETTINGS
-       rgb_button.clicked.connect(
-            lambda: setattr(self, 'current_sensor', "RGB"))
+       rgb_button.clicked.connect(self.select_rgb)
 
-       depth_button.clicked.connect(
-            lambda: setattr(self, 'current_sensor', "DEPTH"))
+       depth_button.clicked.connect(self.select_depth)
 
        lidar_button.clicked.connect(
             lambda: setattr(self, 'current_sensor', "LIDAR"))
@@ -164,6 +165,8 @@ class MainWindow(QMainWindow):
        widget.setLayout(main_layout)
        self.setCentralWidget(widget)
 
+       self.start_camera_manager() # Start the camera manager when the GUI is initialized
+
 
    def robot_connection_status(self):
        # Placeholder for robot connection status code once hooked up to the robot
@@ -180,8 +183,31 @@ class MainWindow(QMainWindow):
             scaled_pixmap = pixmap.scaled(self.sensor_view.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
             self.sensor_view.setPixmap(scaled_pixmap)
 
+   def select_rgb(self):
+        self.current_sensor = "RGB"
 
+   def select_depth(self):
+        self.current_sensor = "DEPTH"
 
+   def start_camera_manager(self):
+        result = subprocess.run(["pgrep", "-f", "camera_manager.py"], capture_output=True,text=True)
+        if result.stdout.strip():
+            print("Camera Manager is already running.")
+        else:
+            subprocess.Popen(["ros2", "run", "camera", "camera_manager.py"])
+            print("Camera Manager Started!")
+   
+   def closeEvent(self,event):
+        print("Shutting down ROS worker...")
+
+        if hasattr(self, "ros_worker"):
+             self.ros_worker.stop()
+
+        if hasattr(self, "ros_thread"):
+             self.ros_thread.quit()
+             self.ros_thread.wait(3000)
+
+        event.accept() 
     
 def main(): # Instructions to Start/Run GUI
     app = QApplication(sys.argv)
@@ -192,9 +218,14 @@ def main(): # Instructions to Start/Run GUI
     ros_thread = QThread() # Creates lane for ROS
     ros_worker = ROSWorker() # Creates ROS worker (object containing ROS work)
     ros_worker.moveToThread(ros_thread) # Runs ROS worker in ROS thread instead of GUI thread
+
     ros_worker.voltage_received.connect(window.update_battery_voltage)
     ros_worker.image_received.connect(window.update_sensor_view)
+
     ros_thread.started.connect(ros_worker.run)
+
+    ros_thread.started.connect(ros_worker.run)
+
     ros_thread.start()
 
     window.show()
