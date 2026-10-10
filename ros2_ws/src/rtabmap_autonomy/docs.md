@@ -28,3 +28,29 @@ ros2 launch rtabmap_autonomy slam.py
 ```
 ros2 run rtabmap_autonomy imu_merge.py
 ```
+
+
+
+
+
+
+
+
+
+
+**Local map**
+```
+ros2 run camera camera_manager.py
+```
+
+```
+ros2 launch rtabmap_autonomy slam.py z:=0.6 pitch:=0.36
+```
+
+```
+ros2 launch nav2_bringup navigation_launch.py params_file:=./nav2_params.yaml use_sim_time:=false
+```
+
+```
+rviz2 -d ~/NMTLunabotics2027/ros2_ws/nav2_rviz.rviz
+```

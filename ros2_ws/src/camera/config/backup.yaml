@@ -91,7 +91,7 @@ camera_manager:
                 pos_sigma: 0.03                    # Position uncertainty (m)
                 yaw_sigma: 0.03                    # Heading uncertainty (deg)
                 min_interval: 0.5                  # Attempted update interval for corrections
-        depth_feed:
+        depth_feed:                                # Inferred/depth feeds must use an consistant resolution/framerate
           enabled: false
           camera:
           - 1
@@ -101,7 +101,7 @@ camera_manager:
             width: 320
             height: 210
             framerate: 24
-        inferred_feed1:
+        inferred_feed1:                            # Inferred/depth feeds must use an consistant resolution/framerate
           enabled: false
           camera:
           - 1
@@ -111,7 +111,7 @@ camera_manager:
           enabled: false
           camera:
           - 1
-          type: inferred2
+          type: inferred2                          # Inferred/depth feeds must use an consistant resolution/framerate
           topic: /inferred2
         sensor_feed:
           enabled: false

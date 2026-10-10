@@ -3,8 +3,16 @@ Required packages:
 pip install av
 ```
 
+Ensure that udev rules are added for realsense camera:
+```
+sudo curl -L -o /etc/udev/rules.d/99-realsense-libusb.rules https://raw.githubusercontent.com/IntelRealSense/librealsense/master/config/99-realsense-libusb.rules
+sudo udevadm control --reload-rules && sudo udevadm trigger
+sudo usermod -aG plugdev $USER
+```
+
 ### Core changes, camera switching and enabling/disabling feed
 ros2 param set /camera_manager feeds.primary.camera0.camera "[0, 1]"
+ros2 param set /camera_manager feeds.primary.camera0.type "[depth, rgb, inferred1]"
 ros2 param set /camera_manager feeds.primary.camera0.enabled false
 
 ### Core camera feed settings, resultion and fps
@@ -32,3 +40,13 @@ ros2 param set /camera_manager feeds.rtabmap.rgb_feed.apriltag_localizer.overlay
 
 
 ros2 param set /camera_manager feeds.primary.camera0.apriltag_localizer.overlay false
+
+
+
+
+Useful commands
+```
+sudo apt install v4l-utils
+v4l2-ctl --list-devices
+sudo usermod -aG video $USER
+```

@@ -6,15 +6,15 @@ camera_manager:
         id: 0                                      # Assigined camera id used by feeds
         camera_info_topic: ''                      # Return camera info topic, leave blank for no data return
       camera1:
-        uuid: '213522253528'
+        uuid: '306322300659'
         id: 1
         camera_info_topic: /camera1_info
       camera2:
-        uuid: '311322301206'
+        uuid: '213522253528'
         id: 2
         camera_info_topic: /camera2_info
       camera3:
-        uuid: '306322300659'
+        uuid: '311322301206'
         id: 3
         camera_info_topic: /camera3_info
         location:                                  # Location of camera center relative to base_link
@@ -33,8 +33,9 @@ camera_manager:
           enabled: true                            # Enable camera stream
           camera:                                  # Cameras to use (camera id), add multiple to array for live switching (first camera in array video is pushed to stream, others idle in background)
           - 1
-          - 0
-          type: rgb                                # Camera feed type: rgb, depth, infered, imu
+          type:                                    # Camera feed type: rgb, depth, inferred1, inferred2, imu
+          - depth
+          - rgb
           topic: /stream                           # Camera output topic
           compression:
             ros_compression: 1                     # Converts video topic into ros compressed topic, (0=false topic only, 1=true compression_topic, 2=both topic and compression_topic)
@@ -73,10 +74,11 @@ camera_manager:
       # rtabmap camera feeds
       rtabmap:
         rgb_feed:
-          enabled: true
+          enabled: false
           camera:
           - 1
-          type: rgb
+          type:
+          - rgb
           topic: /rgb
           sensor_location:                         # Indavidual sensor offset reative to camera location
             position_offset:                       # Sensor position offset (m) [x, y, z]
@@ -107,32 +109,38 @@ camera_manager:
                 pos_sigma: 0.03                    # Position uncertainty (m)
                 yaw_sigma: 0.03                    # Heading uncertainty (deg)
                 min_interval: 0.5                  # Attempted update interval for corrections
-        depth_feed:
-          enabled: true
+        depth_feed:                                # Inferred/depth feeds must use an consistant resolution/framerate
+          enabled: false
           camera:
           - 1
-          type: depth
+          type:
+          - depth
           topic: /depth
           adjustments:
             width: 320
             height: 210
             framerate: 24
-        inferred_feed1:
+            colorize: true                         # Colorize camera depth stream
+            color_scale: 4000                      # Color sclae mapping x (mm), is far end of scale
+        inferred_feed1:                            # Inferred/depth feeds must use an consistant resolution/framerate
           enabled: false
           camera:
           - 1
-          type: inferred1
+          type:
+          - inferred1
           topic: /inferred1
-        inferred_feed2:
+        inferred_feed2:                            # Inferred/depth feeds must use an consistant resolution/framerate
           enabled: false
           camera:
           - 1
-          type: inferred2
+          type:
+          - inferred2
           topic: /inferred2
         sensor_feed:
-          enabled: true
+          enabled: false
           camera:
           - 1
-          type: imu
+          type:
+          - imu
           topic: /imu
           fps: 200
