@@ -34,8 +34,9 @@ camera_manager:
           camera:                                  # Cameras to use (camera id), add multiple to array for live switching (first camera in array video is pushed to stream, others idle in background)
           - 1
           type:                                    # Camera feed type: rgb, depth, inferred1, inferred2, imu
-          - depth
           - rgb
+          - depth
+          - inferred1
           topic: /stream                           # Camera output topic
           compression:
             ros_compression: 1                     # Converts video topic into ros compressed topic, (0=false topic only, 1=true compression_topic, 2=both topic and compression_topic)
