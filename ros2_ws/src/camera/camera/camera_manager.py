@@ -39,11 +39,13 @@ class CameraManager(Node):
         self.pending_timer=self.create_timer(0.5, self.apply_param_changes)
         self.pending_timer.cancel()
 
-        # Handle dynamic switching cameras
+        # Handle dynamic switching cameras, and dynamic camera types
         self.active={}
+        self.active_type={}
         for name, param in self.get_parameters_by_prefix("feeds").items():
             group, feed_name, *field=name.split(".")
             if field==["camera"] and len(param.value): self.active[f"feeds.{group}.{feed_name}"]=int(param.value[0])
+            if field==["type"] and self.feed_types(param.value): self.active_type[f"feeds.{group}.{feed_name}"]=self.feed_types(param.value)[0]
 
         # Launch the inital cameras
         self.open_cameras()
@@ -64,8 +66,9 @@ class CameraManager(Node):
             # For cameras or feeds track each parm and each value
             if not param.name.startswith(("cameras.", "feeds.")): continue
             parts=param.name.split(".")
-            if len(parts)==4 and parts[0]=="feeds" and parts[3]=="camera" and self.has_parameter(param.name) and len(param.value) and sorted(param.value)==sorted(self.get_parameter(param.name).value):
-                self.active[".".join(parts[:3])]=int(param.value[0])
+            if len(parts)==4 and parts[0]=="feeds" and parts[3] in ("camera", "type") and not isinstance(param.value, str) and self.has_parameter(param.name) and not isinstance(self.get_parameter(param.name).value, str) and len(param.value) and sorted(param.value)==sorted(self.get_parameter(param.name).value):
+                if parts[3]=="camera": self.active[".".join(parts[:3])]=int(param.value[0])
+                else: self.active_type[".".join(parts[:3])]=str(param.value[0])
             else: changed.add(param.name)
         # When old cameras and feeds do not match new cameras and feeds queue a parmas update
         if changed:
@@ -119,6 +122,14 @@ class CameraManager(Node):
         else:
             full_path=path.rstrip(".")
             if not self.has_parameter(full_path): self.declare_parameter(full_path, value)
+
+
+    def feed_types(self, value):
+        types=[value] if isinstance(value, str) else [str(item) for item in (value or [])]
+        types=list(dict.fromkeys(item for item in types if item))      # drop blanks and duplicates
+        # imu publishes a different message type, so drop it whenever other sensors are listed
+        if any(item!="imu" for item in types): types=[item for item in types if item!="imu"]
+        return types
 
     # Pull all aruco localizer parmas for when an apriltag is active
     def localizer_config(self, feed_key):
@@ -248,7 +259,7 @@ class CameraManager(Node):
             # Create a types set which includes an set of all enabled camera types
             types_set=set()
             for camera_feed in camera_feeds.values():
-                if camera_feed.get("enabled") and camera_id in camera_feed.get("camera", []): types_set.add(camera_feed.get("type"))
+                if camera_feed.get("enabled") and camera_id in camera_feed.get("camera", []): types_set|=set(self.feed_types(camera_feed.get("type")))
 
             # Speical handler for regular cameras which only support reg cameras
             if usb_camera:
@@ -288,16 +299,25 @@ class CameraManager(Node):
                 if "imu" in types_set: types_set|={"accel", "gyro"}
 
                 # For each camera sensor, loop through the ones that need to be opened and open them
-                for type in types_set:
+                for type in sorted(types_set, key=lambda type: type!="depth"):
                     if type not in camera_feed_mappings: continue
                     stream, camera_format, sensor=camera_feed_mappings[type]
 
                     # Pull default camera settings for each feed type, pulling the supported camera modes
-                    wanted=(type, "imu") if type in ("accel", "gyro") else (type,)
-                    matches=[feed for feed in camera_feeds.values() if feed.get("enabled") and camera_id in feed.get("camera", []) and feed.get("type") in wanted]
+                    if type in ("accel", "gyro"): wanted=(type, "imu")
+                    elif type in ("inferred1", "inferred2"): wanted=("inferred1", "inferred2")
+                    else: wanted=(type,)
+
+                    matches=[feed for feed in camera_feeds.values() if feed.get("enabled") and camera_id in feed.get("camera", []) and set(self.feed_types(feed.get("type")))&set(wanted)]
                     modes=self.get_supported_modes(devices[camera_uuid], stream, camera_format, sensor)
                     if not modes: continue
-                    width, height, fps=self.pick_mode(modes, matches)
+
+                    # Extra camera check
+                    if type in ("inferred1", "inferred2") and "depth" in camera_modes:
+                        depth_mode=camera_modes["depth"]
+                        if depth_mode in modes: width, height, fps=depth_mode
+                        else: width, height, fps=self.pick_mode(modes, [{"adjustments.width": depth_mode[0], "adjustments.height": depth_mode[1], "adjustments.framerate": depth_mode[2]}])
+                    else: width, height, fps=self.pick_mode(modes, matches)
                     camera_modes[type]=(width, height, fps)
 
                     # Enable the camera stream based needed camera formates
@@ -332,8 +352,16 @@ class CameraManager(Node):
             camera_feed_list=[]
             for (group, feed_name), feed in camera_feeds.items():
                 # Pull type, enabled, topic and create publisher for each indavidual camera type
-                feed_type=feed.get("type")
-                if not feed.get("enabled") or camera_id not in feed.get("camera", []) or feed_type not in camera_modes or feed_type in ("accel", "gyro"): continue
+
+                feed_types=[type for type in self.feed_types(feed.get("type")) if type in camera_modes and type not in ("accel", "gyro")]
+                if not feed.get("enabled") or camera_id not in feed.get("camera", []) or not feed_types: continue
+
+                # Delete imu if other camera types are also included
+                is_imu=feed_types[0]=="imu"
+
+                # First type in the array is published, unless a live switch already picked another
+                active_type=self.active_type.get(f"feeds.{group}.{feed_name}")
+                if active_type not in feed_types: active_type=feed_types[0]
 
                 # For compressed video feeds check the parma settings, used to determin of /topic, /topic/compressed, or /custom_name is used for compressed feed
                 raw_topic=feed.get("topic") or f"/{camera_name}"
@@ -341,28 +369,30 @@ class CameraManager(Node):
                 if not compressed_topic.startswith("/"): compressed_topic=f"/{compressed_topic}"
 
                 # Get compression methiod type with backup fallbacks if it does not match expected parmas
-                can_compress=feed_type not in ("imu", "depth")
+                can_compress=not is_imu
                 mode=int(feed.get("compression.ros_compression", 0)) if can_compress else 0
                 if mode not in (0, 1, 2) or (mode==2 and compressed_topic==raw_topic): mode=0
                 raw_publisher=compressed_publisher=None
 
                 # If current sensor is imu publish it's data otherwise publish image or compressed image depending on whats being used
-                if feed_type=="imu": raw_publisher=self.create_publisher(Imu, raw_topic, 10)
+                if is_imu: raw_publisher=self.create_publisher(Imu, raw_topic, 10)
                 else:
-                    if mode in (0, 2): raw_publisher=self.create_publisher(Image, raw_topic, 10)
+                    if mode in (0, 2) or "depth" in feed_types: raw_publisher=self.create_publisher(Image, raw_topic, 10)
                     if mode in (1, 2): compressed_publisher=self.create_publisher(CompressedImage, compressed_topic, qos_profile_sensor_data)
 
                 # Localizer instance for when apriltag is active
-                localizer_cfg=self.localizer_config(f"feeds.{group}.{feed_name}") if feed_type=="rgb" else None
+                localizer_cfg=self.localizer_config(f"feeds.{group}.{feed_name}") if "rgb" in feed_types else None
 
                 # Create an camera feed list that stores all camera settings and refrences anything that the camera feed requires or any operations it supports
                 camera_feed_list.append({
                     "key": f"feeds.{group}.{feed_name}",
-                    "type": feed_type,
+                    "type": active_type,
+                    "types": feed_types,
+                    "mode": mode,
                     "topic": raw_topic,
                     "width": int(feed.get("adjustments.width", 0)),
                     "height": int(feed.get("adjustments.height", 0)),
-                    "grayscale": bool(feed.get("adjustments.grayscale", False)) and feed_type=="rgb",
+                    "grayscale": bool(feed.get("adjustments.grayscale", False)) and "rgb" in feed_types,
                     "fps": int(feed.get("adjustments.framerate", feed.get("fps", 0))),
                     "last": 0.0,
                     "publisher": raw_publisher,
@@ -449,6 +479,11 @@ class CameraManager(Node):
             for feed in camera["feeds"]:
                 if self.active.get(feed["key"], camera["id"])==camera["id"]:
                     if not feed.get("live"): feed["settings"]=None; feed["next"]=0.0; feed["live"]=True
+                    wanted=self.active_type.get(feed["key"])
+                    if wanted in feed["types"] and wanted!=feed["type"]:
+                        feed["type"]=wanted
+                        feed["settings"]=None   
+                        feed["next"]=0.0
                     active.append(feed)
                 else: feed["live"]=False
 
@@ -536,8 +571,15 @@ class CameraManager(Node):
             interp=cv2.INTER_NEAREST if feed["type"]=="depth" else cv2.INTER_AREA
             data=cv2.resize(data, (feed["width"], feed["height"]), interpolation=interp)
 
+        # Handles coloring the depth stream and the color sale of camera
+        if feed["type"]=="depth" and data.dtype==np.uint16 and bool(self.feed_param(feed, "adjustments.colorize", False)):
+            scale=float(self.feed_param(feed, "adjustments.color_scale", 4000))
+            colored=cv2.applyColorMap(cv2.convertScaleAbs(data, alpha=255.0/scale), cv2.COLORMAP_JET)
+            colored[data==0]=0          
+            data=colored
+
         # If an april tag is active on a camera feed pull camera info and apriltag parmas and sent to ArucoLocalize for processing
-        if feed["localizer"]:
+        if feed["localizer"] and feed["type"]=="rgb":
             size=data.shape[:2]
             if feed.get("info_size")!=size:
                 info=self.build_camera_info(camera_name, data.shape[1], data.shape[0], stamp)
@@ -550,12 +592,18 @@ class CameraManager(Node):
         data=self.grayscale_stream(data, feed)
 
         # If stream is compressed publish a compressed video feed
+        is_depth=feed["type"]=="depth"
         if feed["compressed_publisher"]:
-            msg=self.compress_stream(data, feed, camera_name, stamp)
+            view=data
+            if data.dtype==np.uint16:      
+                scale=float(self.feed_param(feed, "adjustments.color_scale", 4000))
+                view=cv2.applyColorMap(cv2.convertScaleAbs(data, alpha=255.0/scale), cv2.COLORMAP_JET)
+                view[data==0]=0
+            msg=self.compress_stream(view, feed, camera_name, stamp)
             if msg is not None: feed["compressed_publisher"].publish(msg)
 
         # Else camera isn't compressed so publish standard video feed
-        if feed["publisher"]:
+        if feed["publisher"] and (feed["mode"]!=1 or is_depth):
             # Choice the correct video encoding format
             if data.dtype==np.uint16: encoding="16UC1"
             elif data.ndim==3: encoding="bgr8"
@@ -677,6 +725,7 @@ class CameraManager(Node):
         for name, param in self.get_parameters_by_prefix("feeds").items():
             group, feed_name, *field=name.split(".")
             if field==["camera"] and len(param.value): self.active[f"feeds.{group}.{feed_name}"]=int(param.value[0])
+            if field==["type"] and self.feed_types(param.value): self.active_type[f"feeds.{group}.{feed_name}"]=self.feed_types(param.value)[0]
         changed, self.pending=self.pending, set()
         relaunch=set()
 
@@ -712,14 +761,12 @@ class CameraManager(Node):
                     for feed in camera["feeds"]:
                         # For each of key parmas, check agenst existing camera mode, if within the cameras limits it can simpliy update the classes lists, otherwise if it falls outside relaunch the camera to support new parma
                         if feed["key"]!=feed_key: continue
-                        if camera["usb"] or (
-                            int(self.feed_param(feed, "adjustments.width", 0)) <= camera["modes"][feed["type"]][0]
-                            and int(self.feed_param(feed, "adjustments.height", 0)) <= camera["modes"][feed["type"]][1]
-                            and int(self.feed_param(feed, "adjustments.framerate", self.feed_param(feed, "fps", 0))) <= camera["modes"][feed["type"]][2]): 
-                                feed["width"] = int(self.feed_param(feed, "adjustments.width", 0))
-                                feed["height"] = int(self.feed_param(feed, "adjustments.height", 0))
-                                feed["fps"] = int(self.feed_param(feed, "adjustments.framerate", self.feed_param(feed, "fps", 0)))
-                                feed["next"] = 0.0
+                        width=int(self.feed_param(feed, "adjustments.width", 0))
+                        height=int(self.feed_param(feed, "adjustments.height", 0))
+                        fps=int(self.feed_param(feed, "adjustments.framerate", self.feed_param(feed, "fps", 0)))
+                        sensor_modes=[camera["modes"][t] for t in feed["types"]]
+                        if camera["usb"] or all(width<=m[0] and height<=m[1] and fps<=m[2] for m in sensor_modes):
+                            feed["width"], feed["height"], feed["fps"], feed["next"]=width, height, fps, 0.0
                         else: relaunch.add(camera_name)
 
             # Addition apriltag changes that require a full camera relaunch
@@ -995,9 +1042,11 @@ class ArucoLocalizer:
 def main():
     rclpy.init()
     node=CameraManager()
-    rclpy.spin(node)
-    node.destroy_node()
-    rclpy.shutdown()
+    try: rclpy.spin(node)
+    except KeyboardInterrupt: pass
+    finally:
+        node.destroy_node()
+        if rclpy.ok(): rclpy.shutdown()
 
 if __name__ == "__main__":
     main()
