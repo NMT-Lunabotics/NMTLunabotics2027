@@ -2,8 +2,10 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#define MAIN_ROBOT 0 // BERMINATOR settings=0, NUC settings=1 //Sets robot state to what robot is being used
-#define PCB_BOARD_SCHEMATIC 0 // BERMINATOR=0 //Sets PCB board schem to the current robot
+// Sets robot state to what robot is being used
+#define MAIN_ROBOT 0 // BERMINATOR settings=0, NUC settings=1
+// Sets PCB board schem to the current robot
+#define PCB_BOARD_SCHEMATIC 0 // BERMINATOR=0
 
 //------------------------------------------------------------
 //        MAIN ROBOT SETTINGS (REGULUS and BERMINATOR)
