@@ -41,8 +41,8 @@ class OutPin {
   int num;
   bool allow_pwm;
 
-  const static int num_pwm_pins = 12;
-  int pwm_pins[num_pwm_pins] = {2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13}; // Mega
+  const static int num_pwm_pins = X;
+  int pwm_pins[num_pwm_pins] = {List of pins matched with X}; // Mega
   // int pwm_pins[6] = {3, 5, 6, 9, 10, 11}; // Uno
 
 public:
