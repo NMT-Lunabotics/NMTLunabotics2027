@@ -3,6 +3,7 @@ from rclpy.node import Node
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 import cv2
+import time
 
 #TEMP
 import numpy as np
@@ -23,8 +24,34 @@ class IntelSubscriber(Node):
 
         self.send_image = send_image
 
+        # Initial RGB & Depth Warning Settings
+        self.last_rgb_time = None # records when latest RGB frame arrives
+        self.last_depth_time = None # records when latest depth frame arrived
+        self.rgb_connected = False # tracks if RGB frame received
+        self.depth_connected = False # tracks if depth frame received
+
+        self.create_timer(1.0, self.check_camera_feeds) # Call check_camera_feeds every 1 second
+
+    def check_camera_feeds(self):
+        now = time.monotonic()
+
+        if self.last_rgb_time is not None:
+            if now - self.last_rgb_time > 3.0 and self.rgb_connected:
+                self.get_logger().error('RGB feed stopped receiving frames.')
+                self.rgb_connected = False
+
+        if self.last_depth_time is not None:
+            if now - self.last_rgb_time > 3.0 and self.depth_connected:
+                self.get_logger().error('Depth feed stopped receiving frames')
+                self.depth_connected = False
+
     def rgb_frame_callback(self, data):
-        self.get_logger().warning('Received RGB frame')
+        self.last_rgb_time = time.monotonic()
+
+        if not self.rgb_connected:
+            self.get_logger().info('RGB feed connected.')
+            self.rgb_connected = True
+
         current_frame = self.bridge_rgb.imgmsg_to_cv2(data, desired_encoding='bgr8')
         current_frame = cv2.cvtColor(current_frame, cv2.COLOR_BGR2RGB)  # Convert BGR to RGB
         height, width, channels = current_frame.shape
@@ -41,23 +68,27 @@ class IntelSubscriber(Node):
             self.send_image("RGB", q_image) # Emit signal to GUI with QImage
 
     def depth_frame_callback(self, data):
-        self.get_logger().warning('Received depth frame')
+        self.last_depth_time = time.monotonic()
+
+        if not self.depth_connected:
+            self.get_logger().info('Depth feed connected.')
+            self.depth_connected = True
 
         current_depth = self.bridge_depth.imgmsg_to_cv2(data)
-        print("Depth Range:", current_depth.min(), "to", current_depth.max())
+        # print("Depth Range:", current_depth.min(), "to", current_depth.max())
 
         valid_mask = (current_depth >= 600) & (current_depth <= 6000)  
         depth_display = np.zeros_like(current_depth, dtype=np.uint8)
 
         valid_pixels = np.sum(valid_mask)
-        print("Valid pixels:", valid_pixels, "/", current_depth.size,
-            f"({100 * valid_pixels / current_depth.size:.1f}%)")
+        # print("Valid pixels:", valid_pixels, "/", current_depth.size,
+            # f"({100 * valid_pixels / current_depth.size:.1f}%)")
 
         depth_display[valid_mask] = np.clip(
             (current_depth[valid_mask].astype(np.float32) - 600) * 255 / (2000 - 600), 0, 255
         ).astype(np.uint8)
 
-        print("Display range:", depth_display.min(), "to", depth_display.max())
+        # print("Display range:", depth_display.min(), "to", depth_display.max())
         
         depth_colored = cv2.applyColorMap(
             depth_display,
@@ -77,14 +108,14 @@ class IntelSubscriber(Node):
 
         valid_depth = current_depth[valid_mask]
 
-        if valid_depth.size > 0:
-            print(
-                "Depth:",
-                "min =", valid_depth.min(),
-                "median =", np.median(valid_depth),
-                "max =", valid_depth.max())
-        else:
-            print("Depth: NO VALID PIXELS")
+        #if valid_depth.size > 0:
+        #    print(
+        #        "Depth:",
+        #        "min =", valid_depth.min(),
+        #        "median =", np.median(valid_depth),
+        #        "max =", valid_depth.max())
+        #else:
+        #    print("Depth: NO VALID PIXELS")
     
         if self.send_image:
             self.send_image("DEPTH", q_image) # Emit signal to GUI with QImage
