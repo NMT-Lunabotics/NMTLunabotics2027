@@ -30,12 +30,13 @@ camera_manager:
       # Primary user camera feed
       primary:
         camera0:
-          enabled: true                            # Enable camera stream
+          enabled: false                            # Enable camera stream
           camera:                                  # Cameras to use (camera id), add multiple to array for live switching (first camera in array video is pushed to stream, others idle in background)
           - 1
           type:                                    # Camera feed type: rgb, depth, inferred1, inferred2, imu
           - depth
           - rgb
+          - inferred1
           topic: /stream                           # Camera output topic
           compression:
             ros_compression: 1                     # Converts video topic into ros compressed topic, (0=false topic only, 1=true compression_topic, 2=both topic and compression_topic)
@@ -55,6 +56,8 @@ camera_manager:
             right_crop: 0                          # Crop stream by x% from right
             top_crop: 0                            # Crop stream by y% from top
             bottom_crop: 0                         # Crop stream by y% from bottom
+            colorize: true                         # Colorize camera depth stream
+            color_scale: 4000                      # Color sclae mapping x (mm), is far end of scale
           apriltag_localizer:
             enabled: true                          # Enable apriltag_localizer for this stream
             overlay: false                         # Enable overlay ontop video feed
@@ -74,7 +77,7 @@ camera_manager:
       # rtabmap camera feeds
       rtabmap:
         rgb_feed:
-          enabled: false
+          enabled: true
           camera:
           - 1
           type:
@@ -110,7 +113,7 @@ camera_manager:
                 yaw_sigma: 0.03                    # Heading uncertainty (deg)
                 min_interval: 0.5                  # Attempted update interval for corrections
         depth_feed:                                # Inferred/depth feeds must use an consistant resolution/framerate
-          enabled: false
+          enabled: true
           camera:
           - 1
           type:
@@ -120,8 +123,6 @@ camera_manager:
             width: 320
             height: 210
             framerate: 24
-            colorize: true                         # Colorize camera depth stream
-            color_scale: 4000                      # Color sclae mapping x (mm), is far end of scale
         inferred_feed1:                            # Inferred/depth feeds must use an consistant resolution/framerate
           enabled: false
           camera:
