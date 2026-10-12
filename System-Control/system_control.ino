@@ -224,6 +224,11 @@ enum LedState { OFF = 0, NONE = -1, ON = 1, BLINK = 2 };
   float arm_vel_90degree = Y;
   float bucket_@degreeneededtodigsand = F;
   float arm_vel_@degreeneededtodigsand = G;
+
+  //Command that calls values for controller inputs
+  void executeSetUp(float angle, float velo)
+    bucketMotor.write(angle)
+    armActuator.write(velo)
 #endif
 //--------------- USED VARIBLES ---------------
 // Speeds
@@ -844,7 +849,7 @@ void loop() {
     #endif
   }
   #endif
-  
+    
   // System fully started turn on green led
   if(system_started==false){
     system_started=true;
@@ -865,6 +870,8 @@ void loop() {
   messages.systemMessageUpdate(current_time);
 #endif
 
+if controllerInput = setinputforaction || othersetinput || etc
+  executeSetUp(bucket_@degreeneededtodigsand, arm_vel_@degreeneededtodigsand)
 
 #if CURRENT_LOGGING==1
   if(current_time - last_amp_time >= 1000 / amp_update_rate){
