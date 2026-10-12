@@ -217,9 +217,14 @@ enum LedState { OFF = 0, NONE = -1, ON = 1, BLINK = 2 };
   // Velocity and error factors - Max velocity (mm/s) and allowed error tolerences (mm)
   float act_max_vel = 25;   
   float act_fix_err = 3.0;  
-  float act_max_err = 7.0;  
-#endif
+  float act_max_err = 7.0; 
 
+  // Values for pre-set actions
+  float bucket_90degree = X;
+  float arm_vel_90degree = Y;
+  float bucket_@degreeneededtodigsand = F;
+  float arm_vel_@degreeneededtodigsand = G;
+#endif
 //--------------- USED VARIBLES ---------------
 // Speeds
 int aL_speed = 0;
