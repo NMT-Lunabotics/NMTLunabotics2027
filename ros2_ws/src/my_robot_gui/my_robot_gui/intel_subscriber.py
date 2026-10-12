@@ -12,7 +12,7 @@ import numpy as np
 from PyQt5.QtGui import QImage
 
 class IntelSubscriber(Node):
-    def __init__(self, send_image = None):
+    def __init__(self, send_image = None, send_message = None):
         # RGB Subscriber
         super().__init__('intel_subscriber')
         self.subscription_rgb = self.create_subscription(Image,"/rgb", self.rgb_frame_callback, 10)
@@ -23,6 +23,7 @@ class IntelSubscriber(Node):
         self.bridge_depth = CvBridge()
 
         self.send_image = send_image
+        self.send_message = send_message
 
         # Initial RGB & Depth Warning Settings
         self.last_rgb_time = None # records when latest RGB frame arrives
@@ -37,19 +38,34 @@ class IntelSubscriber(Node):
 
         if self.last_rgb_time is not None:
             if now - self.last_rgb_time > 3.0 and self.rgb_connected:
-                self.get_logger().error('RGB feed stopped receiving frames.')
+                message = "[ERROR] RGB feed stopped receiving frames."
+                self.get_logger().error(message)
+
+                if self.send_message:
+                    self.send_message(message)
+
                 self.rgb_connected = False
 
         if self.last_depth_time is not None:
-            if now - self.last_rgb_time > 3.0 and self.depth_connected:
-                self.get_logger().error('Depth feed stopped receiving frames')
+            if now - self.last_depth_time > 3.0 and self.depth_connected:
+                message = "[ERROR] Depth feed stopped receiving frames."
+                self.get_logger().error(message)
+
+                if self.send_message:
+                    self.send_message(message)
+
                 self.depth_connected = False
 
     def rgb_frame_callback(self, data):
         self.last_rgb_time = time.monotonic()
 
         if not self.rgb_connected:
-            self.get_logger().info('RGB feed connected.')
+            message = "RGB feed connected."
+            self.get_logger().info(message)
+
+            if self.send_message:
+                self.send_message(message)
+
             self.rgb_connected = True
 
         current_frame = self.bridge_rgb.imgmsg_to_cv2(data, desired_encoding='bgr8')
@@ -71,7 +87,12 @@ class IntelSubscriber(Node):
         self.last_depth_time = time.monotonic()
 
         if not self.depth_connected:
-            self.get_logger().info('Depth feed connected.')
+            message = "Depth feed connected."
+            self.get_logger().info(message)
+
+            if self.send_message: 
+                self.send_message(message)
+
             self.depth_connected = True
 
         current_depth = self.bridge_depth.imgmsg_to_cv2(data)

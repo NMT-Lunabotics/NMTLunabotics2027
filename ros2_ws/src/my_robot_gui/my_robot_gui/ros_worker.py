@@ -10,6 +10,7 @@ from PyQt5.QtGui import QImage
 class ROSWorker(QObject):
     voltage_received = pyqtSignal(float)
     image_received = pyqtSignal(str, QImage)
+    message_received = pyqtSignal(str)
 
     def __init__(self):
         super().__init__()
@@ -26,7 +27,8 @@ class ROSWorker(QObject):
         )
 
         self.intel_subscriber = IntelSubscriber(
-            self.image_received.emit)
+            send_image = self.image_received.emit,
+            send_message = self.message_received.emit)
 
         self.executor = SingleThreadedExecutor()
         self.executor.add_node(self.subscriber)

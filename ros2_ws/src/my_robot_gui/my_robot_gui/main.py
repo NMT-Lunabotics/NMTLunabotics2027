@@ -107,18 +107,15 @@ class MainWindow(QMainWindow):
        left_vbox_layout.setStretch(2,2)
 
        # Robot Updates Terminal
-       robot_updates = QTextEdit()
+       self.robot_updates = QTextEdit()
        robot_updates_title = QLabel("ROBOT UPDATES")
        left_vbox_layout.addWidget(robot_updates_title)
-       left_vbox_layout.addWidget(robot_updates)
+       left_vbox_layout.addWidget(self.robot_updates)
 
        # Robot Updates Placeholder Text
-       robot_updates.setPlainText(
-       "[ROBOT] System initialized\n"
-       "[ROBOT] Connection: ACTIVE\n"
-       "[ROBOT] Battery monitoring: ACTIVE\n"
-       "[ROBOT] Sensors: ONLINE\n")
-       robot_updates.setReadOnly(True)
+       self.robot_updates.setPlainText(
+       "Robot Updates Terminal (Errors & Stats)")
+       self.robot_updates.setReadOnly(True)
 
        #Autonomous Updates Terminal
        autonomous_updates = QTextEdit()
@@ -176,6 +173,14 @@ class MainWindow(QMainWindow):
    def update_battery_voltage(self, voltage):
         self.voltage_label.setText(f"BATTERY: {voltage:.2f} V")
 
+   def add_robot_update(self, message):
+        if message.startswith("[ERROR]"):
+             self.robot_updates.append(
+                  f'<span style="color:red;">{message}</span>'
+             )
+        else:
+            self.robot_updates.append(f"[ROBOT] {message}")
+   
    def update_sensor_view(self, sensor, q_image):
         if self.current_sensor == sensor:
             pixmap = QPixmap.fromImage(q_image)
@@ -221,6 +226,7 @@ def main(): # Instructions to Start/Run GUI
 
     ros_worker.voltage_received.connect(window.update_battery_voltage)
     ros_worker.image_received.connect(window.update_sensor_view)
+    ros_worker.message_received.connect(window.add_robot_update)
 
     ros_thread.started.connect(ros_worker.run)
 
