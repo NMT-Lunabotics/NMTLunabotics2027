@@ -142,5 +142,5 @@ def generate_launch_description():
         rgbd_odom,
         depth_to_cloud,
         obstacles_detection,
-        #rtabmap_viz,
+        rtabmap_viz,
     ])

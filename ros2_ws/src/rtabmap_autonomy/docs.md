@@ -34,7 +34,11 @@ ros2 run rtabmap_autonomy imu_merge.py
 
 
 
-
+```
+ssh nuc@129.138.172.123
+cd NMTLunabotics2027/ros2_ws
+source install/setup.bash
+```
 
 
 
