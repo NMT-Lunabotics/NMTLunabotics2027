@@ -1,11 +1,13 @@
 import sys
 
+# Camera Manager Imports
 import subprocess
+import os
+import signal
 
-
+# GUI imports
 from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QLabel, QSizePolicy, QPushButton, QTextEdit
 from PyQt5.QtGui import QPixmap
-from layout_one import Color
 from ros_worker import ROSWorker
 from PyQt5.QtCore import QThread, Qt
 
@@ -195,24 +197,59 @@ class MainWindow(QMainWindow):
         self.current_sensor = "DEPTH"
 
    def start_camera_manager(self):
-        result = subprocess.run(["pgrep", "-f", "camera_manager.py"], capture_output=True,text=True)
+        result = subprocess.run(["pgrep", "-af", "camera_manager.py"], capture_output=True,text=True)
+        
         if result.stdout.strip():
             print("Camera Manager is already running.")
+            self.camera_manager_process = None
+            self.camera_manager_node_pid = None
         else:
-            subprocess.Popen(["ros2", "run", "camera", "camera_manager.py"])
+            self.camera_manager_process = subprocess.Popen(["ros2", "run","camera","camera_manager.py"], start_new_session=True)
+            self.camera_manager_node_pid = None
+            
             print("Camera Manager Started!")
    
    def closeEvent(self,event):
         print("Shutting down ROS worker...")
 
+        # Stop the ROS Worker
         if hasattr(self, "ros_worker"):
              self.ros_worker.stop()
 
+
+        # Stop the ROS Thread
         if hasattr(self, "ros_thread"):
              self.ros_thread.quit()
              self.ros_thread.wait(3000)
 
-        event.accept() 
+        # Stop the Camera Manager
+        print("Shutting down Camera Manager...")
+
+        result = subprocess.run(
+            ["pgrep", "-af", "[c]amera_manager.py"],
+            capture_output=True,
+            text=True
+        )
+
+        for line in result.stdout.splitlines():
+            parts = line.split(maxsplit=1)
+
+            if len(parts) == 2 and "install/camera/lib/camera/camera_manager.py" in parts[1]:
+                pid = int(parts[0])
+                try:
+                    os.kill(pid, signal.SIGINT)
+                    print(f"Stopped Camera Manager (PID {pid}).")
+                except ProcessLookupError:
+                    print(f"Camera Manager (PID {pid}) was already stopped.")
+
+        if hasattr(self, "camera_manager_process") and self.camera_manager_process:
+            try:
+                self.camera_manager_process.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                self.camera_manager_process.kill()
+                self.camera_manager_process.wait()
+
+        event.accept()
     
 def main(): # Instructions to Start/Run GUI
     app = QApplication(sys.argv)
@@ -220,15 +257,17 @@ def main(): # Instructions to Start/Run GUI
     window = MainWindow()
 
     # Start ROS...
-    ros_thread = QThread() # Creates lane for ROS
-    ros_worker = ROSWorker() # Creates ROS worker (object containing ROS work)
+    window.ros_thread = QThread() # Creates lane for ROS
+    window.ros_worker = ROSWorker() # Creates ROS worker (object containing ROS work)
+
+    ros_thread = window.ros_thread
+    ros_worker = window.ros_worker
+
     ros_worker.moveToThread(ros_thread) # Runs ROS worker in ROS thread instead of GUI thread
 
     ros_worker.voltage_received.connect(window.update_battery_voltage)
     ros_worker.image_received.connect(window.update_sensor_view)
     ros_worker.message_received.connect(window.add_robot_update)
-
-    ros_thread.started.connect(ros_worker.run)
 
     ros_thread.started.connect(ros_worker.run)
 
