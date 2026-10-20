@@ -7,7 +7,7 @@ The project uses ROS 2 Humble in Docker. The Jetson Orin Nano is the robot host:
 ## Repository Layout
 
 - `docker/` contains the Humble image, entrypoint, and container command wrapper.
-- `ros2_ws/src/` contains ROS 2 packages. `robot_bringup` currently provides a hardware-free launch smoke test.
+- `ros2_ws/src/` contains ROS 2 packages. `robot_bringup` provides a hardware-free smoke test; `sensor_bringup` launches the Livox MID-360 and Intel RealSense D435.
 - `scripts/` contains host setup and diagnostic helpers.
 - `docs/` contains Jetson, SSH, networking, safety, and hardware procedures.
 - `rviz2/` is reserved for shared visualization configurations.
@@ -25,13 +25,13 @@ On a Linux development machine with Docker installed:
 ./docker/start_docker.sh --smoke
 ```
 
-The image builds for the host's native architecture. Build on the Jetson for native Orin deployment; cross-platform builds are not configured yet. The initial image targets ROS 2 Humble and does not assume JetPack-specific GPU support.
+The image builds for the host's native architecture. Build on the Jetson for native Orin deployment; cross-platform builds are not configured yet. The image targets ROS 2 Humble. JetPack-specific GPU support is not enabled.
 
-For the shared robot, SSH into the Jetson first, then run the same commands from the checked-out repository there. Do not start motors from this initial scaffold: only a smoke launch exists until the motor interface, emergency stop, and hardware permissions are specified.
+For the shared robot, SSH into the Jetson first, then run the commands from the checked-out repository there. See [docs/sensor-setup.md](docs/sensor-setup.md) before launching either sensor. These launches start sensors only; motor control and excavation actuators remain disabled until their controller interfaces and emergency stop are defined.
 
 ## Current Milestone
 
-This scaffold establishes the workspace and container workflow. The next hardware milestone is to confirm the JetPack/L4T version and motor-controller/E-stop interface, then add base control and the RPLiDAR S3 with a stable host device mapping and isolated sensor power.
+The sensor image pins Livox SDK2 `v1.2.5` and Livox ROS driver `1.2.4`; the RealSense ROS 2 Humble wrapper is installed from ROS packages. Before robot deployment, verify the exact JetPack/L4T version and test both sensors on the Orin Nano. The next hardware milestone is the motor-controller/E-stop interface, then base control and the RPLiDAR S3 with isolated power.
 
 
 

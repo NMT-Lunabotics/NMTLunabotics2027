@@ -27,7 +27,7 @@ Build the image on the Jetson, then launch the hardware-free smoke test:
 ./docker/start_docker.sh --smoke
 ```
 
-The first build downloads the ROS base image and packages and may take several minutes. The workspace is copied into the image, so changing ROS source requires rebuilding the image.
+The first build downloads the ROS base image and packages and may take several minutes. The workspace is copied into the image, so changing ROS source requires rebuilding the image. The default image tag is `nmtlunabotics2027/ros2:sensors-humble`.
 
 Open a shell or run a diagnostic command:
 
@@ -42,7 +42,7 @@ Stop the persistent container when finished:
 ./docker/start_docker.sh --stop
 ```
 
-These commands do not start motors or sensors. No hardware launch mode is available until its driver, device mapping, safety behavior, and acceptance test are implemented. Never use an arbitrary ROS command to publish actuator commands.
+The smoke test is hardware-free. Sensor launch procedures are in [sensor-setup.md](sensor-setup.md). These commands do not start motors; motor and excavation actuator modes remain unavailable until their controller, watchdog, and physical emergency stop are implemented. Never use an arbitrary ROS command to publish actuator commands.
 
 ## Logs and Runtime
 

@@ -3,7 +3,12 @@ set -e
 
 source "/opt/ros/${ROS_DISTRO:-humble}/setup.bash"
 
-WORKSPACE_SETUP="/opt/nmt/ros2_ws/install/setup.bash"
+LIVOX_SETUP="/opt/nmt/livox_ws/install/setup.bash"
+if [[ -f "$LIVOX_SETUP" ]]; then
+    source "$LIVOX_SETUP"
+fi
+
+WORKSPACE_SETUP="/opt/nmt/ros2_ws/install/local_setup.bash"
 if [[ -f "$WORKSPACE_SETUP" ]]; then
     source "$WORKSPACE_SETUP"
 fi

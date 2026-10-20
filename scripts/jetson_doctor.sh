@@ -45,9 +45,9 @@ fi
 
 printf '\nDocker image:\n'
 if command -v docker >/dev/null 2>&1 \
-    && docker image inspect nmtlunabotics2027/ros2:humble \
+    && docker image inspect nmtlunabotics2027/ros2:sensors-humble \
         --format '{{.Os}}/{{.Architecture}} {{.Id}}' 2>/dev/null; then
     :
 else
-    printf 'nmtlunabotics2027/ros2:humble is not built.\n'
+    printf 'nmtlunabotics2027/ros2:sensors-humble is not built.\n'
 fi
