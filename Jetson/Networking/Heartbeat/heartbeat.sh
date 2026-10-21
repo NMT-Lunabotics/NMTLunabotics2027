@@ -6,7 +6,7 @@ source "$CONFIG_FILE" 2>/dev/null || { echo "Cannot load config: $CONFIG_FILE" >
 HEARTBEAT="${PREFIX}:${SSH_USER}"
 
 while true; do
-    if echo -n "$HEARTBEAT" | socat - UDP-DATAGRAM:${BROADCAST_ADDR}:${PORT},broadcast; then
+    if echo -n "$HEARTBEAT" | socat - UDP-DATAGRAM:${BROADCAST}:${PORT},broadcast; then
         echo "Sent: $HEARTBEAT"
     else
         echo "Send failed" >&2
