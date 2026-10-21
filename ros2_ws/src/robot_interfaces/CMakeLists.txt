@@ -9,9 +9,11 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
+
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Example.msg"
   "msg/Command.msg"
+  "msg/NetworkStatus.msg"
 )
 
 ament_export_dependencies(rosidl_default_runtime)

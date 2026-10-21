@@ -2,9 +2,11 @@
 Description=NMT Robot Network Heartbeat
 After=network.target NetworkManager.service
 Wants=network.target
+ConditionPathExists=/etc/heartbeat.conf
 
 [Service]
 Type=simple
+EnvironmentFile=/etc/heartbeat.conf
 ExecStart=/usr/local/bin/heartbeat.sh
 Restart=always
 RestartSec=5

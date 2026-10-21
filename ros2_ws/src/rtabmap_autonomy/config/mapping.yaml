@@ -1,0 +1,109 @@
+# Adapted from lunabot_ros lunabot_config/rtabmap/rtabmap_params.yaml
+# Everything is the repo's value unless tagged "CHANGED" (reason on the same line).
+# The Grid/* block appears twice (rtabmap and obstacles_detection) so the live
+# local ground/obstacle cloud and the map use the same segmentation. Keep them in sync.
+
+rtabmap:
+  ros__parameters:
+    # ---- Occupancy grid / ground segmentation ----
+    Grid/CellSize: "0.04"
+    Grid/FootprintLength: "1.4"
+    Grid/FootprintWidth: "1.0"
+    Grid/FootprintHeight: "1.2"
+    GridGlobal/MinSize: "20"
+    GridGlobal/FootprintRadius: "0.5"
+    Grid/DepthDecimation: "2"
+    Grid/MaxGroundAngle: "30"
+    Grid/MinGroundHeight: "-0.05"
+    Grid/MaxGroundHeight: "0.0"
+    Grid/MinClusterSize: "40"
+    Grid/Sensor: "1"                      # CHANGED 2 -> 1: depth camera only. Use 2 once a lidar cloud/scan is subscribed
+    Grid/RangeMin: "0.5"
+    Grid/RangeMax: "4.0"                  # CHANGED 30 -> 4: D455 depth is too noisy past ~4 m, and far ground at a grazing angle smears the grid. Raise when lidar is added
+    Grid/MaxObstacleHeight: "1.0"
+    Grid/RayTracing: "true"
+    Grid/Scan2dUnknownSpaceFilled: "false"
+    Grid/3D: "true"
+    Grid/GroundIsObstacle: "false"
+    Grid/NormalsSegmentation: "true"
+    Grid/NoiseFilteringRadius: "0.6"
+    Grid/NormalK: "20"
+    Grid/NoiseFilteringMinNeighbors: "10"
+    Grid/ClusterRadius: "0.2"
+    Grid/FlatObstacleDetected: "false"
+    # Grid/MapFrameProjection: "true"     # OPTIONAL: segment ground in the gravity-aligned map frame. Only enable with an IMU-aligned odom, otherwise it bakes in the start tilt
+
+    # ---- Registration ----
+    Reg/Force3DoF: "false"                # CHANGED true -> false: robot pitches/rolls on sand and odom is 6DoF visual
+    Reg/Strategy: "0"                     # CHANGED 2 -> 0: visual only, there is no scan for ICP. Back to 2 with lidar
+
+    # ---- Loop closure / graph ----
+    RGBD/ProximityBySpace: "true"
+    RGBD/ProximityByTime: "true"
+    RGBD/ProximityAngle: "90"
+    RGBD/ProximityDistance: "1.5"
+    RGBD/ProximityPathMaxNeighbors: "100"
+    RGBD/LoopClosureReextractFeatures: "true"
+    RGBD/MaxLoopClosureDistance: "0.2"
+    RGBD/NewMapOdomChangeDistance: "2.5"
+    RGBD/ProximityOdomGuess: "true"
+    RGBD/OptimizeMaxError: "10.0"
+    RGBD/NeighborLinkRefining: "false"
+    RGBD/OptimizeFromGraphEnd: "false"
+    RGBD/StartAtOrigin: "true"
+    RGBD/LinearUpdate: "0.05"
+    RGBD/AngularUpdate: "0.05"
+    RGBD/LinearSpeedUpdate: "0.0"
+    RGBD/AngularSpeedUpdate: "0.0"
+    RGBD/CreateOccupancyGrid: "true"
+
+    # ===== RTABMap apriltags =====
+    RGBD/MarkerDetection: "false" # A custom markers system was already built last year so no need to use the RTABMap version
+
+    # ===== RTABMap memery/runtime =====
+    Rtabmap/StartNewMapOnGoodSignature: "false"
+    Rtabmap/DetectionRate: "10"
+    Rtabmap/OdomGuessRatio: "0.0"
+    Mem/IncrementalMemory: "true"
+    Mem/STMSize: "0"
+    Mem/MaxCacheSize: "50000"
+    Rtabmap/DatabaseInMemory: "true"
+    Rtabmap/Threads: "4"                 # Number of computer cores to use for RTABMap
+
+    # ---- ICP (unused until a scan is added, kept for later) ----
+    Icp/VoxelSize: "0.08"
+    Icp/PointToPlaneK: "0"
+    Icp/PointToPlaneRadius: "0"
+    Icp/PointToPlane: "false"
+    Icp/Iterations: "20"
+    Icp/Epsilon: "0.001"
+    Icp/MaxTranslation: "5"
+    Icp/MaxCorrespondenceDistance: "2"
+    Icp/Strategy: "1"
+    Icp/OutlierRatio: "0.75"
+    Icp/CorrespondenceRatio: "0.3"
+
+    Optimizer/Strategy: "1"               # CHANGED 2 (GTSAM) -> 1 (g2o): g2o is in the stock apt build. Use 2 if your build has GTSAM
+
+    # Dropped vs repo: Odom/* (odometry is configured on the rgbd_odometry node, not here),
+    # and RGBD/LoopClosure, RGBD/LoopClosureMaxDistance, RGBD/OdomVarianceGuess,
+    # RGBD/OdomCorrection, Vis/Odom (could not match them to RTAB-Map's parameter list).
+
+obstacles_detection:
+  ros__parameters:
+    Grid/FootprintLength: "1.4"
+    Grid/FootprintWidth: "1.0"
+    Grid/FootprintHeight: "1.2"
+    Grid/MaxGroundAngle: "30"
+    Grid/MinGroundHeight: "-0.05"
+    Grid/MaxGroundHeight: "0.0"
+    Grid/MinClusterSize: "40"
+    Grid/RangeMin: "0.5"
+    Grid/RangeMax: "4.0"
+    Grid/MaxObstacleHeight: "1.0"
+    Grid/NormalsSegmentation: "true"
+    Grid/NoiseFilteringRadius: "0.6"
+    Grid/NormalK: "20"
+    Grid/NoiseFilteringMinNeighbors: "10"
+    Grid/ClusterRadius: "0.2"
+    Grid/FlatObstacleDetected: "false"

@@ -15,6 +15,8 @@ from rcl_interfaces.msg import SetParametersResult
 class CameraManager(Node):
     def __init__(self):
         super().__init__("camera_manager")
+        # Package start message
+        self.get_logger().info("\033[94mCamera manager node started\033[0m")
 
         # Define a cameras config file parameter. Have it default to config/cameras.yaml if not specifiied
         cameras_config=os.path.join(get_package_share_directory("camera"), "config", "cameras.yaml")

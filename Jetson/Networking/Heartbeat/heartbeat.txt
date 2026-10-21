@@ -14,6 +14,8 @@ sudo apt update && sudo apt install -y socat
 
 sudo nano /etc/systemd/system/heartbeat.service
 
+sudo nano /etc/heartbeat.conf
+
 sudo nano /usr/local/bin/heartbeat.sh
 sudo chmod +x /usr/local/bin/heartbeat.sh
 

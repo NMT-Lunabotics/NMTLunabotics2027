@@ -1,0 +1,9 @@
+float32 latency
+float32 tx_rate
+string tx_rate_units
+float32 rx_rate
+string rx_rate_units
+float32 avg_bandwidth
+string avg_bandwidth_units
+float32 total_bandwidth
+string total_bandwidth_units

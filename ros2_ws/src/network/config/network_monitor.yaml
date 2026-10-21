@@ -1,0 +1,24 @@
+network_monitor:
+  ros__parameters:
+    interface: wlp2s0                              # Network interface (wlan0/wlp2s0/eth0/enp3s0) are most common
+    target_host: 192.168.1.10                      # Target address to check latency against
+    update_rate: 1.0                               # Update rate for standard matrics (hz)
+    ping_rate: 1.0                                 # Update latency metric (hz)
+    ping_timeout: 1.0                              # Ping timeout (s)
+    topic: /network                                # The topic to publish data on
+    total_bandwidth:
+      enabled: true                                # Determins if this network metric should be enabled
+      unit: mb                                     # Units used (kb/mb/gb)
+      reset: false                                 # Reset flag which when set will reset the total/average
+    avg_bandwidth:
+      enabled: true
+      unit: kbps                                   # Units used (kbps/mbps)
+      reset: false
+    latency:
+      enabled: true
+    tx_rate:
+      enabled: true
+      unit: kbps                                   # Units used (kbps/mbps)
+    rx_rate:
+      enabled: true
+      unit: kbps                                   # Units used (kbps/mbps)
