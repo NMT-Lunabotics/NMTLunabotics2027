@@ -2,7 +2,7 @@
 <package format="3">
   <name>sensor_bringup</name>
   <version>0.1.0</version>
-  <description>Launch configuration for the Livox MID-360 and Intel RealSense D435.</description>
+  <description>Launch configuration for the Livox MID-360 and Intel RealSense D456.</description>
   <maintainer email="lunabotics@nmt.edu">NMT Lunabotics Team</maintainer>
   <license>Apache-2.0</license>
 

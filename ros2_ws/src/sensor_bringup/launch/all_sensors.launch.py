@@ -8,7 +8,7 @@ from launch.substitutions import EnvironmentVariable, LaunchConfiguration
 def generate_launch_description():
     package_share = get_package_share_directory("sensor_bringup")
     livox_launch = package_share + "/launch/livox_mid360.launch.py"
-    camera_launch = package_share + "/launch/realsense_d435.launch.py"
+    camera_launch = package_share + "/launch/realsense_d456.launch.py"
     host_ip = LaunchConfiguration("host_ip")
     lidar_ip = LaunchConfiguration("lidar_ip")
     broadcast_code = LaunchConfiguration("broadcast_code")

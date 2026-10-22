@@ -2,12 +2,12 @@
 
 Software workspace for the 2027 New Mexico Tech Lunabotics excavating robot.
 
-The project uses ROS 2 Humble in Docker. The Jetson Orin Nano is the robot host: connect to it over SSH, then build and run the container on the Jetson so ROS nodes can access the robot's attached hardware. The container is headless by default. Visualization and future operator controls are developed separately from motor and sensor drivers.
+The project uses ROS 2 Humble in Docker. The target robot host is an NVIDIA Jetson AGX Orin Developer Kit running JetPack/L4T 36.4.7, Ubuntu 22.04.5, and an aarch64 kernel. Connect over SSH, then build and run the container on the Jetson so ROS nodes can access attached hardware. The container is headless by default. Visualization and operator controls are separate from motor and sensor drivers.
 
 ## Repository Layout
 
 - `docker/` contains the Humble image, entrypoint, and container command wrapper.
-- `ros2_ws/src/` contains ROS 2 packages. `robot_bringup` provides a hardware-free smoke test; `sensor_bringup` launches the Livox MID-360 and Intel RealSense D435.
+- `ros2_ws/src/` contains ROS 2 packages. `robot_bringup` provides a hardware-free smoke test; `sensor_bringup` launches the Livox MID-360 and Intel RealSense D456.
 - `scripts/` contains host setup and diagnostic helpers.
 - `docs/` contains Jetson, SSH, networking, safety, and hardware procedures.
 - `rviz2/` is reserved for shared visualization configurations.
@@ -31,7 +31,7 @@ For the shared robot, SSH into the Jetson first, then run the commands from the 
 
 ## Current Milestone
 
-The sensor image pins Livox SDK2 `v1.2.5` and Livox ROS driver `1.2.4`; the RealSense ROS 2 Humble wrapper is installed from ROS packages. Before robot deployment, verify the exact JetPack/L4T version and test both sensors on the Orin Nano. The next hardware milestone is the motor-controller/E-stop interface, then base control and the RPLiDAR S3 with isolated power.
+The sensor image pins Livox SDK2 `v1.2.5` and Livox ROS driver `1.2.4`; RealSense D456 support uses librealsense `v2.58.4` and ROS wrapper `v4.58.4`. Build and test natively on the AGX Orin before robot deployment. The camera must enumerate at USB 3 speed for the planned color/depth/point-cloud profile. Motor control and the RPLiDAR S3 remain separate hardware milestones.
 
 
 

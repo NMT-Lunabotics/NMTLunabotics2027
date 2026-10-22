@@ -15,7 +15,7 @@ def generate_launch_description():
                 PythonLaunchDescriptionSource(camera_launch),
                 launch_arguments={
                     "camera_namespace": "camera",
-                    "camera_name": "d435",
+                    "camera_name": "d456",
                     "depth_module.depth_profile": "640x480x30",
                     "rgb_camera.color_profile": "640x480x30",
                     "enable_color": "true",

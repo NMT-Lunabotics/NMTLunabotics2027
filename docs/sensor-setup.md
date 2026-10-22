@@ -1,12 +1,20 @@
-# Livox MID-360 and RealSense D435
+# Livox MID-360 and RealSense D456
 
 The Docker image targets ROS 2 Humble and contains:
 
 - Livox SDK2 `v1.2.5` and Livox ROS driver `1.2.4`, pinned to commit `b6ff7d1c8b210a96b74e919823771e1e32249758`.
-- ROS Humble's apt-managed `realsense2_camera` package and its librealsense dependency.
+- librealsense `v2.58.4` with the RSUSB backend and ROS 2 Humble wrapper `v4.58.4`, built from pinned upstream tags. RealSense lists D456 support starting with SDK `v2.58.4` and firmware `5.17.3.10` or later.
 - `sensor_bringup` launch files for each sensor and both together.
 
-The image is built on the host architecture. Build and validate it on the Orin Nano before robot use. The current development workstation image is `linux/amd64`; it is not evidence of ARM64 or JetPack compatibility.
+The target is the NVIDIA Jetson AGX Orin Developer Kit, JetPack/L4T `36.4.7`, Ubuntu `22.04.5`, kernel `5.15.148-tegra`, `aarch64`. The image is built on the host architecture; it has not yet been built or hardware-tested on this Jetson. The RealSense SDK and wrapper compile from source in Docker, so allow adequate disk space. Check space before building:
+
+```bash
+df -h /
+docker system df
+docker builder du
+```
+
+Do not run `docker image prune` or `docker system prune`; no Docker images need to be deleted for this setup. If more space is required, review the build-cache report and optionally prune only old build cache with `docker builder prune --filter until=168h`. This preserves images and prompts before deleting cache.
 
 ## Livox MID-360 Ethernet
 
@@ -36,14 +44,14 @@ Verify that the driver node is present, list the point-cloud and IMU topics, and
 
 Validate UDP reception and point-cloud continuity while the robot network is under normal load.
 
-## RealSense D435 USB
+## RealSense D456 USB
 
-The D435 is connected to the Jetson over USB 3. Run the RealSense udev setup on the **Jetson host**, not inside Docker. The project image maps `/dev/bus/usb` only when the D435 mode is selected; the host still controls USB device permissions and kernel drivers.
+The device label and USB ID `8086:0b5c` identify the camera as a D456. It connects to the Jetson over USB 3. Run the RealSense udev setup on the **Jetson host**, not inside Docker. The project image maps `/dev/bus/usb` only when D456 mode is selected; the host still controls USB device permissions and kernel drivers. The observed topology currently reports `480M` through a USB 2 hub; move the camera to a USB 3-capable port/cable and confirm `lsusb -t` reports `5000M` or faster before streaming tests.
 
 On the Jetson host, using the matching RealSense SDK source release as the rule source:
 
-1. Check that the camera is connected directly to a USB 3-capable port and is visible to the host with `lsusb`.
-2. Follow the official [RealSense Jetson guide](https://github.com/realsenseai/librealsense/blob/master/doc/installation_jetson.md) for the installed JetPack/L4T release. Check the installed wrapper/SDK versions with `dpkg-query -W 'ros-humble-realsense2-camera' 'ros-humble-librealsense2*'`.
+1. Check that the camera is connected directly to a USB 3-capable port and is visible to the host with `lsusb`; confirm `lsusb -t` reports `5000M` or faster.
+2. Follow the official [RealSense Jetson guide](https://github.com/realsenseai/librealsense/blob/master/doc/installation_jetson.md) for the installed JetPack/L4T release. The SDK is built in the project image; the host needs the USB udev rules and compatible kernel support, not a separately installed ROS wrapper.
 3. Obtain the matching v2.58.4 rule source and its helper dependency:
 
   ```bash
@@ -53,13 +61,13 @@ On the Jetson host, using the matching RealSense SDK source release as the rule 
   sudo ./scripts/setup_udev_rules.sh
   ```
 
-  Review the official script before running it with elevated privileges. It may ask you to disconnect attached RealSense cameras while installing rules. It installs the upstream USB rules on the **host**; after it completes, reconnect the D435 and verify it appears in `lsusb` and the host device list.
-4. Check Jetson kernel compatibility for the D435 and the chosen librealsense backend. The Docker image does not patch the Jetson kernel. Do not apply kernel patches unless host-level testing shows they are required and the team approves the change.
+  Review the official script before running it with elevated privileges. It may ask you to disconnect attached RealSense cameras while installing rules. It installs the upstream USB rules on the **host**; after it completes, reconnect the D456 and verify it appears in `lsusb` and the host device list.
+4. The image builds librealsense with the user-space RSUSB backend and does not patch the Jetson kernel. Do not apply kernel patches unless testing shows they are required and the team approves the change.
 
 Launch the camera independently:
 
 ```bash
-./docker/start_docker.sh --d435
+./docker/start_docker.sh --d456
 ```
 
 The default launch enables color and depth at 640x480x30, synchronizes the streams, aligns depth to color, enables the point-cloud filter, and publishes diagnostics. These are a conservative starting profile, not a claim that the selected USB cable, hub, Jetson port, or system load has passed validation. If bandwidth or compute is constrained, lower the profile or disable point-cloud generation in the launch configuration.
@@ -69,11 +77,11 @@ Verify node and topic discovery from the container:
 ```bash
 ./docker/start_docker.sh --command "ros2 node list"
 ./docker/start_docker.sh --command "ros2 topic list"
-./docker/start_docker.sh --command "ros2 topic hz /camera/d435/depth/image_rect_raw"
+./docker/start_docker.sh --command "ros2 topic hz /camera/d456/depth/image_rect_raw"
 ./docker/start_docker.sh --command "ros2 topic echo /diagnostics --once"
 ```
 
-Expected image topics include `/camera/d435/color/image_raw`, `/camera/d435/depth/image_rect_raw`, and `/camera/d435/aligned_depth_to_color/image_raw`. Confirm actual topic names and frame IDs with the running camera; they may depend on wrapper version and launch namespace.
+Expected image topics include `/camera/d456/color/image_raw`, `/camera/d456/depth/image_rect_raw`, and `/camera/d456/aligned_depth_to_color/image_raw`. Confirm actual topic names, firmware version, and frame IDs with the running camera; topic layout can vary with wrapper version.
 
 ## Start Both Sensors
 
@@ -90,17 +98,17 @@ The Livox driver receives UDP over host networking; the RealSense driver receive
 
 ## Acceptance Checks
 
-1. Record Jetson Orin Nano model, JetPack/L4T, kernel, camera firmware, and USB connection details.
+1. Record the AGX Orin model, JetPack/L4T, kernel, D456 firmware, and USB connection speed.
 2. Build the image natively on the Jetson and check `docker image inspect nmtlunabotics2027/ros2:sensors-humble --format '{{.Os}}/{{.Architecture}}'` reports `linux/arm64`.
 3. Run the Livox test alone and verify UDP receipt, stable point-cloud frequency, IMU publication, and frame ID.
-4. Run the D435 test alone and verify color/depth rates, aligned-depth topics, diagnostics, and no recurring USB reset/disconnect messages.
+4. Run the D456 test alone and verify firmware is `5.17.3.10` or later, color/depth rates, aligned-depth topics, diagnostics, and no recurring USB reset/disconnect messages.
 5. Run both together and record Jetson CPU, memory, temperature, USB stability, image rates, and Livox packet continuity.
-6. Disconnect/reconnect the D435 and restart the Livox link deliberately; record whether each driver recovers or requires a container restart.
+6. Disconnect/reconnect the D456 and restart the Livox link deliberately; record whether each driver recovers or requires a container restart.
 7. Repeat while motors are powered and moving. The known RPLiDAR dropout was diagnosed as a power brownout; this sensor stack must also pass a motor-load/power check. Do not modify the custom RPLiDAR ribbon cable, and use isolated sensor power where required.
 
 ## Known Gates
 
-- The exact Orin Nano JetPack/L4T version is not recorded in the repository. The current container has not yet been built or run on that target.
+- The AGX Orin reports JetPack/L4T `36.4.7`; the image still needs a native ARM64 build and hardware run on that target.
 - The team-specific MID-360 IPs and network configuration are intentionally not committed here.
 - Real hardware is needed to confirm USB permissions, USB 3 throughput, camera firmware behavior, and MID-360 UDP reception.
 - These sensor launches do not start motors, teleoperation, SLAM, or Nav2.
