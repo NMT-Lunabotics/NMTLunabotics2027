@@ -200,11 +200,66 @@ enum LedState { OFF = 0, NONE = -1, ON = 1, BLINK = 2 };
   //                            Subsystem Classes Setup
   //----------------------------------------------------------------------------------
 // Did it in the main actuators and motors channels, felt more readable if it was just commented as a class
-
+void sendSerialFeedback(char command, uint8_t* data, size_t dataLen);
 //The void setup just start all components
 void setup(){
+  delay(5);
+  Serial.begin(115200);
 }
 //Void loop should be split into several different parts similar to how the catagories are set up
 //All saftey in one spot, all data updates in one spot, and all autonomy in one spot.
 void loop(){
+// This uses the same format as Serial commands sent to the arduino but it sends them back to the jetson for live serial update
+void sendSerialFeedback(char command, uint8_t* data, size_t dataLen) {
+  // Start and end byte for feedback command
+  const uint8_t startByte = 0x02;
+  const uint8_t endByte   = 0x03; 
+  // Create buffer with serial data
+  uint8_t buf[64];   
+  size_t idx = 0;
+  // Add start byte, end byte, length byte, command byte, and data bytes into buffer,
+  buf[idx++] = startByte; 
+  buf[idx++] = dataLen + 1;
+  buf[idx++] = command;
+  for (size_t i = 0; i < dataLen; i++) { 
+    buf[idx++] = data[i];
+  }
+  buf[idx++] = endByte;
+  // Write serial buffer to Serial
+  Serial.write(buf, idx);   
+}
+
+// This processes the serial buffer and if the buffer passes it's byte checks, it's sent to processMessage() to update data.
+void processSerialBuffer() {
+  while (Serial.available() > 0) {
+    byte b = Serial.read();
+    if (!receiving_message) {
+        if (b == 0x02) {
+            receiving_message = true;
+            serial_index = 0;
+            expected_length = -1;
+        }
+    } else {
+        if (expected_length == -1) {
+            expected_length = b;
+            if (expected_length <= 0 || expected_length > MY_SERIAL_BUFFER_SIZE) {
+                receiving_message = false; // invalid length
+            }
+        } else {
+            serial_buffer[serial_index++] = b;
+            if (serial_index == expected_length + 1) { // +1 for end byte
+                if (serial_buffer[serial_index-1] == 0x03) {
+                    processMessage(serial_buffer, expected_length);
+                } else {
+                    Serial.println("End byte not found");
+                }
+                receiving_message = false;
+            } else if (serial_index >= MY_SERIAL_BUFFER_SIZE) {
+                // overflow protection
+                receiving_message = false;
+            }
+        }
+    }
+  }
+}
 }
