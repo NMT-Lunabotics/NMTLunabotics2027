@@ -5,12 +5,254 @@ import subprocess
 import os
 import signal
 
+# Auto-Robot Connect Imports
+import socket
+import json
+import time
+
 # GUI imports
 from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QLabel, QSizePolicy, QPushButton, QTextEdit
+# Auto-Robot Connect Imports
+from PyQt5.QtWidgets import QDialog, QComboBox, QLineEdit, QMessageBox, QFormLayout
 from PyQt5.QtGui import QPixmap
 from ros_worker import ROSWorker
 from PyQt5.QtCore import QThread, Qt
 
+# Robot Discovery Settings (ported from 2026 Driver Station)
+UDP_DESTINATION = ("0.0.0.0", 11000)
+TELEMETRY_LISTEN = ("0.0.0.0", 10000)
+COMMAND_DESTINATION = ("0.0.0.0", 10001)
+
+DISCOVERY_PORT = 11010
+DISCOVERY_MAGIC = b"F310_DISCOVERY_V1"
+LEGACY_DISCOVERY_PORT = 10000
+
+DISCOVERY_ATTEMPTS = 5
+DISCOVERY_TIMEOUT = 0.6
+
+CAMERA_HTTP_PORT = 8081
+
+SAVED_IPS = [
+    "192.168.0.207",
+    "129.138.171.148",
+    "192.168.2.127",
+]
+
+AUTO_IP_CONNECT = False
+
+# Auto Robot Connect System (move if operational)
+def discover_robot(attempts=DISCOVERY_ATTEMPTS, timeout=DISCOVERY_TIMEOUT):
+    """Search for a robot using the 2026 Driver Station discovery protocol."""
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+
+    try:
+        sock.bind(("", LEGACY_DISCOVERY_PORT))
+
+        for _ in range(max(1, attempts)):
+            # Send both current and legacy discovery requests.
+            for port, payload in (
+                (DISCOVERY_PORT, DISCOVERY_MAGIC),
+                (LEGACY_DISCOVERY_PORT, b"B-NMT26"),
+            ):
+                try:
+                    sock.sendto(payload, ("255.255.255.255", port))
+                except OSError:
+                    pass
+
+            deadline = time.monotonic() + timeout
+
+            while time.monotonic() < deadline:
+                remaining = deadline - time.monotonic()
+                sock.settimeout(max(0.01, remaining))
+
+                try:
+                    data, address = sock.recvfrom(1024)
+                except socket.timeout:
+                    break
+                except OSError:
+                    return None
+
+                message = data.decode(errors="ignore").strip()
+
+                if not message:
+                    continue
+
+                # Handle JSON discovery replies.
+                try:
+                    response = json.loads(message)
+                except json.JSONDecodeError:
+                    response = None
+
+                if isinstance(response, dict):
+                    return (
+                        address[0],
+                        int(response.get("udp_port", UDP_DESTINATION[1])),
+                        int(response.get("command_port", COMMAND_DESTINATION[1])),
+                        int(response.get("telemetry_port", TELEMETRY_LISTEN[1])),
+                    )
+
+                # Handle the legacy text reply.
+                if message.startswith("NMT26:"):
+                    return (
+                        address[0],
+                        UDP_DESTINATION[1],
+                        COMMAND_DESTINATION[1],
+                        TELEMETRY_LISTEN[1],
+                    )
+
+    except OSError as error:
+        print(f"Robot discovery error: {error}")
+    finally:
+        sock.close()
+
+    return None
+
+class RobotSelectionDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.setWindowTitle("Find and Connect to Berminator Jr.")
+        self.setMinimumWidth(450)
+
+
+        ## GUI style - move later
+        # Match the BERMINATOR JR. MONITOR theme
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #121212;
+                color: white;
+            }
+
+            QLabel {
+                color: white;
+                font-family: "Segoe UI";
+                font-size: 11pt;
+                padding: 4px;
+                border: none;
+            }
+
+            QComboBox, QLineEdit {
+                background-color: #242424;
+                color: white;
+                border: 1px solid #444444;
+                border-radius: 6px;
+                padding: 8px;
+                font-size: 11pt;
+            }
+
+            QComboBox QAbstractItemView {
+                background-color: #242424;
+                color: white;
+                selection-background-color: #2A3F55;
+                selection-color: white;
+            }
+
+            QPushButton {
+                background-color: #2A3F55;
+                color: white;
+                border: 1px solid #3A526B;
+                border-radius: 8px;
+                padding: 10px;
+                font-family: "Segoe UI";
+                font-size: 11pt;
+                font-weight: bold;
+            }
+
+            QPushButton:hover {
+                background-color: #385675;
+                border: 1px solid #587895;
+            }
+
+            QPushButton:pressed {
+                background-color: #1B2A3A;
+            }
+
+            QPushButton:disabled {
+                background-color: #242424;
+                color: #777777;
+                border: 1px solid #333333;
+            }
+        """)
+        ####################################
+        self.robot_connection = None
+
+        layout = QVBoxLayout(self)
+
+        layout.addWidget(QLabel("Discover a robot on the network:"))
+
+        self.discovered_label = QLabel("No robot discovered yet.")
+        layout.addWidget(self.discovered_label)
+
+        self.find_button = QPushButton("Find Robot")
+        self.find_button.clicked.connect(self.find_robot)
+        layout.addWidget(self.find_button)
+
+        layout.addWidget(QLabel("Saved robot addresses:"))
+
+        self.saved_ip_combo = QComboBox()
+        self.saved_ip_combo.addItems(SAVED_IPS)
+        layout.addWidget(self.saved_ip_combo)
+
+        layout.addWidget(QLabel("Or enter an IP address manually:"))
+
+        self.manual_ip_input = QLineEdit()
+        self.manual_ip_input.setPlaceholderText("Example: 192.168.0.207")
+        layout.addWidget(self.manual_ip_input)
+
+        self.connect_button = QPushButton("Connect")
+        self.connect_button.clicked.connect(self.accept_selection)
+        layout.addWidget(self.connect_button)
+
+        self.cancel_button = QPushButton("Cancel")
+        self.cancel_button.clicked.connect(self.reject)
+        layout.addWidget(self.cancel_button)
+
+    def find_robot(self):
+        self.find_button.setEnabled(False)
+        self.discovered_label.setText("Searching for robot...")
+        QApplication.processEvents()
+
+        result = discover_robot()
+
+        self.find_button.setEnabled(True)
+
+        if result:
+            self.robot_connection = result
+            self.discovered_label.setText(
+                f"Robot discovered at {result[0]}"
+            )
+        else:
+            self.discovered_label.setText("No robot found.")
+
+    def accept_selection(self):
+        manual_ip = self.manual_ip_input.text().strip()
+
+        if manual_ip:
+            self.robot_connection = (
+                manual_ip,
+                UDP_DESTINATION[1],
+                COMMAND_DESTINATION[1],
+                TELEMETRY_LISTEN[1],
+            )
+
+        elif self.robot_connection is None and self.saved_ip_combo.currentText():
+            self.robot_connection = (
+                self.saved_ip_combo.currentText(),
+                UDP_DESTINATION[1],
+                COMMAND_DESTINATION[1],
+                TELEMETRY_LISTEN[1],
+            )
+
+        if self.robot_connection is None:
+            QMessageBox.warning(
+                self,
+                "Robot Not Selected",
+                "Find a robot or select/enter an IP address first.",
+            )
+            return
+
+        self.accept()
 
 class MainWindow(QMainWindow):
    def __init__(self):
@@ -164,7 +406,6 @@ class MainWindow(QMainWindow):
        widget.setLayout(main_layout)
        self.setCentralWidget(widget)
 
-       self.start_camera_manager() # Start the camera manager when the GUI is initialized
 
 
    def robot_connection_status(self):
@@ -255,6 +496,31 @@ def main(): # Instructions to Start/Run GUI
     app = QApplication(sys.argv)
     app.setStyleSheet(styleSheet)
     window = MainWindow()
+
+    
+    # Ask the operator to find or select a robot.
+    selection_dialog = RobotSelectionDialog()
+    if selection_dialog.exec_() != QDialog.Accepted:
+        print("Robot selection canceled.")
+        return
+
+    robot_ip, udp_port, command_port, telemetry_port = (
+        selection_dialog.robot_connection
+    )
+
+    print(f"Selected robot: {robot_ip}")
+    print(f"UDP port: {udp_port}")
+    print(f"Command port: {command_port}")
+    print(f"Telemetry port: {telemetry_port}")
+
+    window = MainWindow()
+    window.robot_ip = robot_ip
+    window.udp_destination = (robot_ip, udp_port)
+    window.command_destination = (robot_ip, command_port)
+    window.telemetry_listen = ("0.0.0.0", telemetry_port)
+
+    # Start Camera Manager
+    window.start_camera_manager()
 
     # Start ROS...
     window.ros_thread = QThread() # Creates lane for ROS
