@@ -271,10 +271,77 @@ void setup(){
 void loop(){
 
 //Set speeds for motors
-//Set ramping acceleration and velocity to reach max speeds
+//Set ramping acceleration and velocity to reach max speeds (old code doesn't have this)
 //Have PID loops to make sure motors are consistent and don't double inout etc
-//Have timeouts and saftey features
-//Implement new serial protocol into giving motor velocity and status back to the Jetson
+//Have timeouts and saftey features (research into more features)
+//Implement new serial protocol into giving motor velocity and status back to the Jet
+  
+  //Old motor control code
+  #if MOTORS_ENABLED
+        // Update motor speeds
+        if(mLR_rotation_speed!=0 && mLR_rotation!=0){
+          if(mLR_arc_radius!=0){
+            float mL_velocity=mLR_rotation_speed*(1-robot_width/mLR_arc_radius);
+            float mR_velocity=mLR_rotation_speed*(1+robot_width/mLR_arc_radius);
+            #if MAIN_ROBOT==0 || MAIN_ROBOT==1
+            motor_left.motor_ctrl(mL_velocity);
+            motor_right.motor_ctrl(mR_velocity);
+            #else
+              simpleMotorLeft.setSpeed(mL_velocity);   
+              simpleMotorRight.setSpeed(mR_velocity);
+            #endif
+          }
+          else if(mLR_rotation>0){
+            #if MAIN_ROBOT==0 || MAIN_ROBOT==1
+              motor_left.motor_ctrl(-mLR_rotation_speed);
+              motor_right.motor_ctrl(mLR_rotation_speed);
+            #else
+              simpleMotorLeft.setSpeed(-mLR_rotation_speed);   
+              simpleMotorRight.setSpeed(mLR_rotation_speed);
+            #endif
+          }
+          else if(mLR_rotation<0){
+            #if MAIN_ROBOT==0 || MAIN_ROBOT==1
+              motor_left.motor_ctrl(mLR_rotation_speed);
+              motor_right.motor_ctrl(-mLR_rotation_speed);
+            #else
+              simpleMotorLeft.setSpeed(mLR_rotation_speed);   
+              simpleMotorRight.setSpeed(-mLR_rotation_speed);
+            #endif
+          }
+          #if IMU_SENSOR_ENABLED
+          if((mLR_rotation<0&&IMU_yaw<=mLR_rotation)||(mLR_rotation>0&&IMU_yaw>=mLR_rotation)){
+            #if MAIN_ROBOT==0 || MAIN_ROBOT==1
+              motor_left.stop();
+              motor_right.stop();
+            #else
+              simpleMotorLeft.stop();
+              simpleMotorRight.stop();
+            #endif
+            mLR_rotation_speed=0;
+            if(reset_IMU_local_home==false) IMU_local_home_bias=IMU_yaw;
+            update_IMU_raw_home=true;
+            #if DEBUG_MODE
+              Serial.print("Yaw: ");
+              Serial.println(IMU_yaw,6);
+            #endif
+            updateIMUData(true);
+            sendSerialFeedback('R', nullptr, 0);
+          } 
+          #endif
+        }
+        else{
+          #if MAIN_ROBOT==0 || MAIN_ROBOT==1
+            motor_left.motor_ctrl(mL_speed*mL_speed_scale);
+            motor_right.motor_ctrl(mR_speed*mR_speed_scale);
+          #else
+            simpleMotorLeft.setSpeed(mL_speed*mL_speed_scale);   
+            simpleMotorRight.setSpeed(mR_speed*mR_speed_scale);
+          #endif
+        }
+      #endif
+    } 
+    else stop_all();
 
 //Serial Feedback Command For Arm Actuator Positions
 uint8_t LRpositionData[8];
