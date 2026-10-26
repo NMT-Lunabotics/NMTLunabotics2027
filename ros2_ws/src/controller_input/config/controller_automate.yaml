@@ -1,0 +1,11 @@
+controller_input_node:      
+  ros__parameters:      
+    automations:     
+      A_BUTTON: dump
+      B_BUTTON: none
+      X_BUTTON: dig2
+      Y_BUTTON: none
+      HORIZONTAL_DPAD_LEFT: dig2
+      HORIZONTAL_DPAD_RIGHT: none
+      VERTICAL_DPAD_UP: none
+      VERTICAL_DPAD_DOWN: dump
