@@ -1,16 +1,12 @@
 #!/usr/bin/env python3
 
-import rclpy
+import rclpy, time, yaml, os, serial, threading
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from robot_interfaces.msg import Command
-import time
-import yaml
-import os
-import serial
-import threading
 import serial.tools.list_ports
 import rclpy.logging
+from datetime import datetime
 
 # Converts /cmd_vel and /actuator messages which range from [-1,1] to [-30,30] or [-25,25] which are sent to run robot 
 
@@ -43,6 +39,12 @@ class serialCommands:
         self._read_buffer = bytearray()
         time.sleep(2)
 
+        # Handle data logging
+        self.start_time=None
+        self.log_file=None
+        self.log_path=None
+        self.log_dir=os.path.expanduser('~/NMTLunabotics2027/logs')
+
     def find_arduino(self)->str:
         """Auto-detect Arduino port"""
         ports = serial.tools.list_ports.comports()
@@ -53,9 +55,30 @@ class serialCommands:
 
     def close_serial(self)->None:
         """Close the serial connection"""
+        if self.log_file:
+            self.log_file.close()
+            self.log_file=None
         if self.serial:
             self.serial.close()
-            self.serial = None
+            self.serial=None
+
+    # Log when the node got started
+    def startTime(self, start_time): self.start_time=start_time
+
+    def open_log(self):
+        # Make directory if it does not exist and create timestamp
+        os.makedirs(self.log_dir, exist_ok=True)
+        stamp=datetime.now().strftime("%m-%d-%Y_%H-%M-%S")
+
+        # Log path and file
+        self.log_path=os.path.join(self.log_dir, f"commands_{stamp}.log")
+        self.log_file=open(self.log_path, 'w', buffering=1)
+
+    def log_command(self, command, data):
+        # Open log file and write command to that log file, dated with the current time 
+        if self.log_file is None: self.open_log()
+        now = datetime.now().strftime("%H:%M:%S.%f")
+        self.log_file.write(f"{now} {command} {data}\n")
     
     def send_command(self, command: str, data: list)->None:
         """Send required data string command to arduino over serial."""
@@ -64,10 +87,10 @@ class serialCommands:
         msg.append(self.startByte)
         msg.append(length)
         msg.append(ord(command))
-        for d in data:
-            msg.append(d % 256)
+        for d in data: msg.append(d % 256)
         msg.append(self.endbyte)
         self.serial.write(msg)
+        self.log_command(command, data)
 
 class SerialTalkerNode(Node):
     def __init__(self):
@@ -100,7 +123,9 @@ class SerialTalkerNode(Node):
         self.wheel_base=2           # Distance between wheels (m)
 
         try:
-            self.serial = serialCommands()  # could throw RuntimeError
+            self.serial=serialCommands()  # could throw RuntimeError
+            self.serial.startTime(datetime.now()) # Log time that serial starts at
+
             self.get_logger().info(f"Arduino started on port: {self.serial.port}")
         except RuntimeError as e:
             self.get_logger().error(f"\033[31mSerial initialization failed: {e}\033[0m")
