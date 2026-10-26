@@ -209,12 +209,33 @@ void setup(){
 //Void loop should be split into several different parts similar to how the catagories are set up
 //All saftey in one spot, all data updates in one spot, and all autonomy in one spot.
 void loop(){
-// This uses the same format as Serial commands sent to the arduino but it sends them back to the jetson for live serial update
-void sendSerialFeedback(char command, uint8_t* data, size_t dataLen) {
+//Serial Feedback Command For Arm Actuator Positions
+uint8_t LRpositionData[8];
+memcpy(LRpositionData,     &aL_pos, 4);
+memcpy(LRpositionData + 4, &aR_pos, 4);
+sendSerialFeedback('P', LRpositionData, 8);
+
+//Serial feedback for bucket act
+uint8_t BucpositionData[4];
+memcpy(BucpositionData,     &aB_pos, 4);
+sendSerialFeedback('B', BUCpositionData, 4);
+
+//Feedback for currents
+uint8_t averageampsData[16]
+memcpy(averageampsData,     &amp_average_left_motor, 4);
+memcpy(averageampsData + 4, &amp_average_right_motor, 4);
+memcpy(averageampsData + 8, &amp_average_arm_actuators, 4);
+memcpy(averageampsData + 12, &amp_average_bucket_actuators, 4);
+sendSerialFeedback('A', averageampsData, 16);
+
+  // This uses the same format as Serial commands sent to the arduino but it sends them back to the jetson for live serial update
+void sendSerialFeedback(char command, const uint8_t* data, size_t dataLen) {
   // Start and end byte for feedback command
   const uint8_t startByte = 0x02;
   const uint8_t endByte   = 0x03; 
   // Create buffer with serial data
+  if (dataLen > 60 || (dataLen > 0 && data == nullptr))
+    return;
   uint8_t buf[64];   
   size_t idx = 0;
   // Add start byte, end byte, length byte, command byte, and data bytes into buffer,
