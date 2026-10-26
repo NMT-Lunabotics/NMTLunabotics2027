@@ -196,6 +196,66 @@ enum LedState { OFF = 0, NONE = -1, ON = 1, BLINK = 2 };
 //Motor and actuator timeout variables (probably put these in their sections)
 //Serial and state
 //PID controller velo gain
+// Timing
+int update_rate = 200;                // hz
+int update_actuator_feedback = 1000;  // hz
+int feedback_rate = 10;               // hz
+int reset_int_rate = 10;              // hz
+unsigned long last_update_time = 0;
+unsigned long last_update_actuator_time = 0;
+unsigned long last_feedback_time = 0;
+unsigned long last_reset_int_time = 0;
+unsigned long led_blink_time=0;
+unsigned long current_time = 0;
+const unsigned long estop_timeout = 2000;  // 2 second timeout for failed serial commication
+unsigned long last_message_time = 0;
+unsigned long last_error_message_time = 0;  
+int error_message_interval = 2000;
+bool emergency_stop = false;
+String system_fault_msg = "";
+bool system_started = false;
+//int rc_startup_state=0;
+#if CURRENT_LOGGING==1
+  unsigned long last_amp_time = 0;
+  const int amp_update_rate = 20; // hz
+  float amp_average_left_motor = 0;
+  float amp_average_right_motor = 0;
+  float amp_average_arm_actuators = 0;
+  float amp_average_bucket_actuators = 0;
+  int amp_tick_count = 0;
+#endif
+
+#if SENSOR_OUTPUT == 7
+  unsigned long last_report_time = 0;
+  int count_A = 0;
+  int count_M = 0;
+  int count_A_zero = 0;
+  int count_A_nonzero = 0;
+  int count_M_zero = 0;
+  int count_M_nonzero = 0;
+#endif
+
+// Motor and actuator timeout variables, shutdown motors and actuators if a message is not reviced within timeout period
+unsigned long last_actuator_cmd_time = 0; 
+unsigned long last_motor_cmd_time = 0;
+int motor_timeout = 300;
+int actuator_timeout = 300;
+
+// Serial and state
+bool serial_connection_established=false;
+bool RC_connection_established=false;
+bool receiving_message = false;
+bool at_bucket_min = false;
+bool at_bucket_max = false;
+bool dual_actuator_correct = false;
+int serial_index = 0;
+int expected_length = -1;
+bool control_take_over=false;
+const int MY_SERIAL_BUFFER_SIZE = 128;
+byte serial_buffer[MY_SERIAL_BUFFER_SIZE];
+
+// Set up PID controllers velocity gain
+float vel_gain = 2.5;
   //----------------------------------------------------------------------------------
   //                            Subsystem Classes Setup
   //----------------------------------------------------------------------------------
