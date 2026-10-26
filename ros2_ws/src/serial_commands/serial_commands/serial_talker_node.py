@@ -43,7 +43,7 @@ class serialCommands:
         self.start_time=None
         self.log_file=None
         self.log_path=None
-        self.log_dir=os.path.expanduser('~/NMTLunabotics2027/logs')
+        self.log_dir=os.path.expanduser('~/command_logs')
 
     def find_arduino(self)->str:
         """Auto-detect Arduino port"""
