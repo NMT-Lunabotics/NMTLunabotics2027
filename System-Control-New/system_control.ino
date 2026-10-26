@@ -269,6 +269,13 @@ void setup(){
 //Void loop should be split into several different parts similar to how the catagories are set up
 //All saftey in one spot, all data updates in one spot, and all autonomy in one spot.
 void loop(){
+
+//Set speeds for motors
+//Set ramping acceleration and velocity to reach max speeds
+//Have PID loops to make sure motors are consistent and don't double inout etc
+//Have timeouts and saftey features
+//Implement new serial protocol into giving motor velocity and status back to the Jetson
+
 //Serial Feedback Command For Arm Actuator Positions
 uint8_t LRpositionData[8];
 memcpy(LRpositionData,     &aL_pos, 4);
