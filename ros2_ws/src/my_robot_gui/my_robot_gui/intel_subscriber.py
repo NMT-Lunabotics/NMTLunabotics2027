@@ -15,11 +15,11 @@ class IntelSubscriber(Node):
     def __init__(self, send_image = None, send_message = None):
         # RGB Subscriber
         super().__init__('intel_subscriber')
-        self.subscription_rgb = self.create_subscription(Image,"/camera/camera/color/image_raw", self.rgb_frame_callback, 10) # Change to Image, "/rgb" when testing with computer
+        self.subscription_rgb = self.create_subscription(Image,"/stream", self.rgb_frame_callback, 10) # Change to Image, "/rgb" when testing with computer
         self.bridge_rgb = CvBridge()
 
         # Depth Subscriber
-        self.subscription_depth = self.create_subscription(Image, "/camera/camera/depth/image_rect_raw", self.depth_frame_callback, 10)
+        self.subscription_depth = self.create_subscription(Image, "/depth", self.depth_frame_callback, 10)
         self.bridge_depth = CvBridge()
 
         self.send_image = send_image
