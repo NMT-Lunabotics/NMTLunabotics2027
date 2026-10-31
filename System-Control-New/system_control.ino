@@ -343,24 +343,91 @@ void loop(){
     } 
     else stop_all();
 
-//Serial Feedback Command For Arm Actuator Positions
-uint8_t LRpositionData[8];
-memcpy(LRpositionData,     &aL_pos, 4);
-memcpy(LRpositionData + 4, &aR_pos, 4);
-sendSerialFeedback('P', LRpositionData, 8);
+//Arm and Bucket actuator updators with new feedback code
+  if (current_time - last_update_actuator_time >= 1000 / update_actuator_feedback) {
+    last_update_actuator_time = current_time;
+    #if SENSOR_OUTPUT == 5
+      Serial.print("Act pos: ");
+    #endif
+    #if ARM_ACTUATORS_ENABLED
+      aL_pos = act_left.update_pos("Act L: ");
+      aR_pos = act_right.update_pos("Act R: ");
+      #if SENSOR_OUTPUT == 5
+          //Serial Feedback Command For Arm Actuator Positions
+          uint8_t LRpositionData[8];
+          memcpy(LRpositionData,     &aL_pos, 4);
+          memcpy(LRpositionData + 4, &aR_pos, 4);
+          sendSerialFeedback('P', LRpositionData, 8);
+      #endif
+    #endif
+    #if BUCKET_ACTUATOR_ENABLED
+      aB_pos = act_bucket.update_pos("Act B: ");
+      #if SENSOR_OUTPUT == 5
+          //Serial feedback for bucket act @615
+          uint8_t BucpositionData[4];
+          memcpy(BucpositionData,     &aB_pos, 4);
+          sendSerialFeedback('B', BUCpositionData, 4);   
+      #endif
+    #endif
+    #if SENSOR_OUTPUT == 5
+      Serial.println("");
+    #endif
+  }
 
-//Serial feedback for bucket act
-uint8_t BucpositionData[4];
-memcpy(BucpositionData,     &aB_pos, 4);
-sendSerialFeedback('B', BUCpositionData, 4);
+//Current logging with new serial feedback starting @864
+#if CURRENT_LOGGING==1
+  if(current_time - last_amp_time >= 1000 / amp_update_rate){
+    last_amp_time = current_time;
+    amp_tick_count+=1;
 
-//Feedback for currents
-uint8_t averageampsData[16]
-memcpy(averageampsData,     &amp_average_left_motor, 4);
-memcpy(averageampsData + 4, &amp_average_right_motor, 4);
-memcpy(averageampsData + 8, &amp_average_arm_actuators, 4);
-memcpy(averageampsData + 12, &amp_average_bucket_actuators, 4);
-sendSerialFeedback('A', averageampsData, 16);
+    amp_average_left_motor+=analogRead(CURRENT_LEFT_MOTOR);
+    amp_average_right_motor+=analogRead(CURRENT_RIGHT_MOTOR);
+    amp_average_arm_actuators+=analogRead(CURRENT_ARM_ACTUATORS);
+    amp_average_bucket_actuators+=analogRead(CURRENT_BUCKET_ACTUATORS);
+    if(amp_tick_count>=20){
+      amp_tick_count=0;
+
+      amp_average_left_motor=abs(amp_average_left_motor/amp_update_rate);
+      amp_average_left_motor=(amp_average_left_motor - 530.0) / 13.5;
+
+      amp_average_right_motor=abs(amp_average_right_motor/amp_update_rate);
+      amp_average_right_motor=(amp_average_right_motor - 460.0) / 13.5;
+
+      amp_average_arm_actuators=abs(amp_average_arm_actuators/amp_update_rate);
+      amp_average_arm_actuators=(amp_average_arm_actuators - 530.0) / 13.5;
+
+      amp_average_bucket_actuators=abs(amp_average_bucket_actuators/amp_update_rate);
+      amp_average_bucket_actuators=(amp_average_bucket_actuators - 530.0) / 13.5;
+
+    if(amp_average_left_motor <= 0.25)
+        amp_average_left_motor = 0.0;
+
+    if(amp_average_right_motor <= 0.25)
+        amp_average_right_motor = 0.0;
+
+    if(amp_average_arm_actuators <= 0.25)
+        amp_average_arm_actuators = 0.0;
+
+    if(amp_average_bucket_actuators <= 0.25)
+        amp_average_bucket_actuators = 0.0;
+      
+      //Feedback for currents 
+      uint8_t averageampsData[16]
+      memcpy(averageampsData,     &amp_average_left_motor, 4);
+      memcpy(averageampsData + 4, &amp_average_right_motor, 4);
+      memcpy(averageampsData + 8, &amp_average_arm_actuators, 4);
+      memcpy(averageampsData + 12, &amp_average_bucket_actuators, 4);
+      sendSerialFeedback('A', averageampsData, 16);
+    
+      amp_average_left_motor = 0;
+      amp_average_right_motor = 0;
+      amp_average_arm_actuators = 0;
+      amp_average_bucket_actuators = 0;
+      Serial.println("");
+    }
+  }
+#endif
+}
 
   // This uses the same format as Serial commands sent to the arduino but it sends them back to the jetson for live serial update
 void sendSerialFeedback(char command, const uint8_t* data, size_t dataLen) {
