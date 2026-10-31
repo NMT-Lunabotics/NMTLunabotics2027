@@ -276,72 +276,92 @@ void loop(){
 //Have timeouts and saftey features (research into more features)
 //Implement new serial protocol into giving motor velocity and status back to the Jet
   
-  //Old motor control code
-  #if MOTORS_ENABLED
-        // Update motor speeds
-        if(mLR_rotation_speed!=0 && mLR_rotation!=0){
-          if(mLR_arc_radius!=0){
-            float mL_velocity=mLR_rotation_speed*(1-robot_width/mLR_arc_radius);
-            float mR_velocity=mLR_rotation_speed*(1+robot_width/mLR_arc_radius);
-            #if MAIN_ROBOT==0 || MAIN_ROBOT==1
-            motor_left.motor_ctrl(mL_velocity);
-            motor_right.motor_ctrl(mR_velocity);
-            #else
-              simpleMotorLeft.setSpeed(mL_velocity);   
-              simpleMotorRight.setSpeed(mR_velocity);
-            #endif
-          }
-          else if(mLR_rotation>0){
-            #if MAIN_ROBOT==0 || MAIN_ROBOT==1
-              motor_left.motor_ctrl(-mLR_rotation_speed);
-              motor_right.motor_ctrl(mLR_rotation_speed);
-            #else
-              simpleMotorLeft.setSpeed(-mLR_rotation_speed);   
-              simpleMotorRight.setSpeed(mLR_rotation_speed);
-            #endif
-          }
-          else if(mLR_rotation<0){
-            #if MAIN_ROBOT==0 || MAIN_ROBOT==1
-              motor_left.motor_ctrl(mLR_rotation_speed);
-              motor_right.motor_ctrl(-mLR_rotation_speed);
-            #else
-              simpleMotorLeft.setSpeed(mLR_rotation_speed);   
-              simpleMotorRight.setSpeed(-mLR_rotation_speed);
-            #endif
-          }
-          #if IMU_SENSOR_ENABLED
-          if((mLR_rotation<0&&IMU_yaw<=mLR_rotation)||(mLR_rotation>0&&IMU_yaw>=mLR_rotation)){
-            #if MAIN_ROBOT==0 || MAIN_ROBOT==1
-              motor_left.stop();
-              motor_right.stop();
-            #else
-              simpleMotorLeft.stop();
-              simpleMotorRight.stop();
-            #endif
-            mLR_rotation_speed=0;
-            if(reset_IMU_local_home==false) IMU_local_home_bias=IMU_yaw;
-            update_IMU_raw_home=true;
-            #if DEBUG_MODE
-              Serial.print("Yaw: ");
-              Serial.println(IMU_yaw,6);
-            #endif
-            updateIMUData(true);
-            sendSerialFeedback('R', nullptr, 0);
-          } 
-          #endif
+  #if IBUS_RECIVER_ENABLED
+  // Read serial and process messages while being Non-blocking
+    if (ibus.update()) {
+      #if SENSOR_OUTPUT == 3
+        int16_t* joy = ibus.getJoystick(true);
+        Serial.print("Raw RC controller inputs: ");
+        for (int i = 0; i < 12; i++) {  
+          Serial.print(joy[i]);
+          Serial.print(" ");
         }
-        else{
-          #if MAIN_ROBOT==0 || MAIN_ROBOT==1
-            motor_left.motor_ctrl(mL_speed*mL_speed_scale);
-            motor_right.motor_ctrl(mR_speed*mR_speed_scale);
+        Serial.println("");
+      #elif SENSOR_OUTPUT == 2
+        int16_t* joy = ibus.getJoystick();
+        Serial.print("RC controller inputs: ");
+        for (int i = 0; i < 6; i++) {  
+          Serial.print(joy[i]);
+          Serial.print(" ");
+        }
+        Serial.println("");
+      #else
+        int16_t* joy = ibus.getJoystick();
+        // if(joy[4]==0) rc_startup_state=1;
+        // else if(joy[4]==1 && rc_startup_state==1) rc_startup_state=2;
+        // else if(joy[4]==0 && rc_startup_state==2) rc_startup_state=1;
+        // && rc_startup_state==2
+        if(joy[4]==0) {
+          mL_speed=0;
+          mR_speed=0;
+          aL_speed=0;
+          aR_speed=0;
+          aB_speed=0;
+          control_take_over=true;
+        }
+        // && rc_startup_state!=0
+        else {
+          #if MAIN_ROBOT==1
+            int16_t steering = joy[2];
+            int16_t throttle = joy[3]; 
+            mR_speed = constrain(throttle - steering, -30, 30);
+            mL_speed = constrain(throttle + steering, -30, 30);
+            aLR_tgt = -1;
+            aB_tgt = -1;
+            aB_speed = -joy[0];
+            aL_speed = joy[1];
+            aR_speed = aL_speed;
+            last_actuator_cmd_time=current_time;
+            last_motor_cmd_time=current_time;
           #else
-            simpleMotorLeft.setSpeed(mL_speed*mL_speed_scale);   
-            simpleMotorRight.setSpeed(mR_speed*mR_speed_scale);
+            int16_t steering = joy[2];
+            int16_t throttle = joy[3]; 
+            mR_speed = constrain(throttle - steering, -30, 30);
+            mL_speed = constrain(throttle + steering, -30, 30);
+            aLR_tgt = -1;
+            aB_tgt = -1;
+            aB_speed = joy[0];
+            aL_speed = joy[1];
+            aR_speed = aL_speed;
           #endif
+          #if SENSOR_OUTPUT == 4
+            uint8_t motorACTvalues[16]
+            memcpy(motorACTvalues,     &mL_speed, 4);
+            memcpy(motorACTvalues + 4, &mR_speed, 4);
+            memcpy(motorACTvalues + 8, &aR_speed, 4);
+            memcpy(motorACTvalues + 12, &aB_speed, 4);
+            sendSerialFeedback('M', averageampsData, 16);
+          #endif
+          if(RC_connection_established==false){
+            RC_connection_established=true;
+            systemFault(false,"","", NONE, NONE, ON);
+          }
         }
       #endif
     } 
-    else stop_all();
+    else{
+      control_take_over=false;
+      if(serial_connection_established==false) {
+        #if SERIAL_COMM_TIMEOUT_FAULT
+          systemFault(true,"Serial communication timeout.","", NONE, NONE, BLINK);
+        #else 
+          systemFault(false,"Serial communication timeout.","", NONE, NONE, BLINK);
+        #endif
+      }
+    }
+    
+    
+  #endif
 
 //Arm and Bucket actuator updators with new feedback code
   if (current_time - last_update_actuator_time >= 1000 / update_actuator_feedback) {
@@ -428,6 +448,192 @@ void loop(){
   }
 #endif
 }
+
+// Read serial communication from autonomy computer and set system variables to output.
+void processMessage(byte *data, int length) {
+  current_time = millis();
+  char type = data[0];
+  #if DEBUG_MODE
+    Serial.print("Received message of type: ");
+    Serial.println(type);
+    Serial.print("Length: ");
+    Serial.println(length);
+  #endif
+  bool cmd_triggered = true;
+  switch (type) {
+    // Chnage actuator speeds/positions
+    case 'A':
+      {      
+        if(control_take_over) break;
+        #if BUCKET_ACTUATOR_ENABLED || ARM_ACTUATOR_ENABLED       
+          // (A, actuators) Recvived Arm and Bucket actuator speeds and positions.
+          aLR_tgt = (int16_t)((data[1] << 8) | data[2]);  // Adjusted index to skip the type byte
+          aB_tgt = (int16_t)((data[3] << 8) | data[4]);
+          aL_speed = -(int8_t)data[5];
+          aR_speed = aL_speed;
+          aB_speed = -(int8_t)data[6];
+          #if SENSOR_OUTPUT==7
+            if (aL_speed == 0 && aB_speed == 0) count_A_zero++;
+            else count_A_nonzero++;
+          #endif
+          #if DEBUG_MODE
+            uint8_t armbuckposveloc[16]
+            memcpy(armbuckposveloc,     &aLR_tgt, 4);
+            memcpy(armbuckposveloc + 4, &aB_tgt, 4);
+            memcpy(armbuckposveloc + 8, &aL_speed, 4);
+            memcpy(armbuckposveloc + 12, &aB_speed, 4);
+            sendSerialFeedback('V', armbuckposveloc, 16);
+          #endif
+          last_actuator_cmd_time=current_time;
+        #endif
+        break;
+      }
+    // Change motor speeds
+    case 'M':
+      {    
+        if(control_take_over) break;
+        #if MOTORS_ENABLED
+          // (M, motors) Recvived left and right motor speeds
+          mR_speed = (int8_t)data[1];  
+          mL_speed = (int8_t)data[2];
+          #if SENSOR_OUTPUT==7
+            if (mR_speed == 0 && mL_speed == 0) count_M_zero++;
+            else count_M_nonzero++;
+          #endif
+          #if DEBUG_MODE
+            uint8_t motorautospeed[8]
+            memcpy(motorautospeed,     &mL_speed, 4);
+            memcpy(motorautospeed + 4, &mR_speed, 4);
+            sendSerialFeedback('S', motorautospeed, 8);
+          #endif
+          last_motor_cmd_time=current_time;
+        #endif
+        break;
+      }
+    // Rotate robot
+    case 'R': 
+      { 
+        #if IMU_SENSOR_ENABLED && MOTORS_ENABLED
+        // (R, rotate) Recvives a rotation speed, angle, radius, and home reset, to allow arc or stationary turns       
+        mLR_rotation_speed = (int8_t)data[1]; 
+        if(mLR_rotation_speed>0&&mLR_rotation_speed>motor_max_vel) mLR_rotation_speed=motor_max_vel;
+        else if(mLR_rotation_speed<0&&mLR_rotation_speed<-motor_max_vel) mLR_rotation_speed=-motor_max_vel;
+        mLR_rotation = -(int8_t)data[2];
+        mLR_arc_radius = (int8_t)data[3];
+        reset_IMU_local_home = (int8_t)data[4];
+        update_IMU_raw_home=false;
+        if(mLR_arc_radius==0&&mLR_rotation_speed==0&&mLR_rotation==0&&reset_IMU_local_home==true) IMU_local_home_bias=IMU_yaw;
+        #if DEBUG_MODE
+          uint8_t motorrotationspeed[12]
+          memcpy(motorrotationspeed,     &mLR_rotation_speed, 4);
+          memcpy(motorrotationspeed + 4, &mLR_arc_radius, 4);
+          memcpy(motorrotationspeed + 8, &mLR_rotation, 4);
+          sendSerialFeedback('R', motorrotationspeed, 12);
+        #endif
+        last_motor_cmd_time=current_time;
+        #endif
+        break;
+      }
+    // Servo state
+    case 'S':    
+      { 
+        #if SERVO_MOTOR_ENABLED
+        servo.write(data[1]);
+        #if SENSOR_OUTPUT == 8
+          Serial.print("Servo State: ");
+          Serial.println(data[1]);
+        #endif
+        #endif
+        break;
+      }
+    // E-STOP REBOOT
+    case 'B':
+    // USE E-STOP RESETS WITH EXTREAM CAUTION, THIS CAN BE DANGRUS TO THE WHOLE ROBOT.
+    // This command should only be sent by a user whom knows the dangers and system workings, so (no automated button) and (no autonomy resets) and if a controller is used the (reset should require a combanation of 3+ buttons to do the reset)
+      { 
+        emergency_stop=false;
+        break;
+      }
+    /*case 'L':
+      {                   
+        //led_r = data[1];  
+        //led_y = data[2];
+        //led_g = data[3];
+        //led_b = data[4];
+        #if DEBUG_MODE
+          Serial.print("Red: ");
+          Serial.print(led_r);
+          Serial.print(" Yellow: ");
+          Serial.print(led_y);
+          Serial.print(" Green: ");
+          Serial.print(led_g);
+          Serial.print(" Blue: ");
+          Serial.println(led_b);
+        #endif
+        break;
+      }*/
+    // Send data infomation
+    case 'D':
+      // IDs: 0-32 are saved for 
+      {
+        // Save interger first byte as payload: (0-64) reserved for now, rest are used for data.
+        int id=data[1];
+        //char id[4];                         
+        //sprintf(id, "%d", data[1]);  
+        
+        // Determine what to do with saved data
+        int operation=data[2];
+        //char operation[4];                         
+        //sprintf(operation, "%d", data[2]); 
+        
+        // Get data payload and have messages calss handle all farther message handling
+        uint8_t* payload = &data[3]; 
+        #if SCREEN_ENABLED
+          messages.addMessageToArduino(id, operation, payload);
+        #endif
+        break;
+      }
+    default:
+      Serial.println("Unknown message type");
+      cmd_triggered=false;
+    break;
+  }
+  last_message_time=current_time;
+  if(serial_connection_established==false && cmd_triggered==true){
+    serial_connection_established=true;
+    systemFault(false,"","", NONE, NONE, ON);
+  }
+}
+
+// This logs the IMU sensor over a number of sample to get an mean value, and then uses some math to figure out the angle of the IMU sensor
+void calibrateIMUAngle() {
+  // Record accelerometer and find average acceloration in each direction
+  int16_t ax, ay, az;
+  long ax_sum = 0, ay_sum = 0, az_sum = 0;
+  for (int i = 0; i < IMU_angle_bias_samples; i++) {
+      IMU.getAcceleration(&ax, &ay, &az);
+      ax_sum += ax;
+      ay_sum += ay;
+      az_sum += az;
+      delay(10);
+  }
+  float ax_avg = (float)ax_sum / IMU_angle_bias_samples;
+  float ay_avg = (float)ay_sum / IMU_angle_bias_samples;
+  float az_avg = (float)az_sum / IMU_angle_bias_samples;
+  // Use trig to figure out the current pich and roll of the current sesnor
+  float IMU_pitch_angle_bias = atan2(-ax_avg, sqrt(ay_avg * ay_avg + az_avg * az_avg));
+  float IMU_roll_angle_bias = atan2(ay_avg, az_avg);
+  // Apply roll and pitch as scale factor to correctly orientate the sensor at any orientation
+  IMU_yaw_scale = cos(IMU_pitch_angle_bias) * cos(IMU_roll_angle_bias);
+  #if SENSOR_OUTPUT == 1
+  uint8_t IMUangles[12]
+  memcpy(IMUangles,     &IMU_pitch_angle_bias, 4);
+  memcpy(IMUangles + 4, &IMU_roll_angle_bias, 4);
+  memcpy(IMUangles + 8, &IMU_yaw_scale, 4);
+  sendSerialFeedback('I', IMUangles, 12);
+  #endif
+}
+
 
   // This uses the same format as Serial commands sent to the arduino but it sends them back to the jetson for live serial update
 void sendSerialFeedback(char command, const uint8_t* data, size_t dataLen) {
