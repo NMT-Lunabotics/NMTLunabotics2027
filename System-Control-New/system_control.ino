@@ -254,6 +254,16 @@ bool control_take_over=false;
 const int MY_SERIAL_BUFFER_SIZE = 128;
 byte serial_buffer[MY_SERIAL_BUFFER_SIZE];
 
+//Saftey Code
+//0 = Normal Functioning
+//1 = Emergency Stop
+//2 = Motor Timeout
+//3 = Actuator Timeout
+//4 = Bucket Pos Lim
+//5 = Arm sync failure
+//6 = Overcurrent
+//7 = IMU Failure
+
 // Set up PID controllers velocity gain
 float vel_gain = 2.5;
   //----------------------------------------------------------------------------------
@@ -261,6 +271,7 @@ float vel_gain = 2.5;
   //----------------------------------------------------------------------------------
 // Did it in the main actuators and motors channels, felt more readable if it was just commented as a class
 void sendSerialFeedback(char command, uint8_t* data, size_t dataLen);
+void sendSafetyFeedback(uint8_t safetyCode);
 //The void setup just start all components
 void setup(){
   delay(5);
@@ -276,7 +287,9 @@ void loop(){
 //Have timeouts and saftey features (research into more features)
 //Implement new serial protocol into giving motor velocity and status back to the Jet
   
-  #if IBUS_RECIVER_ENABLED
+  
+
+#if IBUS_RECIVER_ENABLED
   // Read serial and process messages while being Non-blocking
     if (ibus.update()) {
       #if SENSOR_OUTPUT == 3
@@ -363,6 +376,7 @@ void loop(){
     
   #endif
 
+
 //Arm and Bucket actuator updators with new feedback code
   if (current_time - last_update_actuator_time >= 1000 / update_actuator_feedback) {
     last_update_actuator_time = current_time;
@@ -393,6 +407,9 @@ void loop(){
       Serial.println("");
     #endif
   }
+
+
+
 
 //Current logging with new serial feedback starting @864
 #if CURRENT_LOGGING==1
@@ -449,7 +466,10 @@ void loop(){
 #endif
 }
 
-// Read serial communication from autonomy computer and set system variables to output.
+
+
+
+   // Read serial communication from autonomy computer and set system variables to output.
 void processMessage(byte *data, int length) {
   current_time = millis();
   char type = data[0];
@@ -605,6 +625,8 @@ void processMessage(byte *data, int length) {
   }
 }
 
+
+
 // This logs the IMU sensor over a number of sample to get an mean value, and then uses some math to figure out the angle of the IMU sensor
 void calibrateIMUAngle() {
   // Record accelerometer and find average acceloration in each direction
@@ -635,6 +657,90 @@ void calibrateIMUAngle() {
 }
 
 
+
+//System fault code
+void systemFault(bool criticalError,String fault_msg, String error_msg, LedState y, LedState g, LedState b) {
+  // A criticalError means full robot shutdown, also this logs the shutdown error.
+  if(criticalError==true){
+    sendSafteyFeedback(1);
+    emergency_stop=true;
+  }
+  if(fault_msg!="") system_fault_msg=fault_msg;
+
+  // Once a shutdown state is entered, print log, set red led, and shutdown main loop from running until arduino is reset
+  if(emergency_stop==true){
+    while(true){
+    stop_all();
+    // If the system is E-STOPPED no normal commands are able to take place, however we keep listening to serial for a E-STOP reset command
+    processSerialBuffer();
+    
+    #if IBUS_RECIVER_ENABLED
+      if (ibus.update()) {
+        int16_t* joy = ibus.getJoystick();
+        if(joy[4]==0 && joy[5]==1) {
+          emergency_stop=false;
+          #if ERROR_LEDS_ENABLED
+            ledr_pin.write(0);
+          #endif
+          return;
+        }
+      } 
+    #endif
+    if(emergency_stop==false) break;
+    if (current_time - last_error_message_time >= error_message_interval) {
+      Serial.println("Critical System Fault (E-STOPPED): " + system_fault_msg + " - Reset Arduino to continue.");
+      last_error_message_time = current_time;
+    }
+    #if ERROR_LEDS_ENABLED
+      ledr_pin.write(1);
+      ledy_pin.write(0);
+      ledg_pin.write(0);
+      ledb_pin.write(0);
+    #endif
+    }
+    return;
+  }
+  // For less critical errros print error once, and turn on error led
+  if(error_msg!=""){
+    Serial.println("System Error: " + error_msg);
+    if(y==NONE) led_y = ON;
+  }
+  // Update led states
+  if(y!=NONE) led_y = y;
+  if(g!=NONE) led_g = g;
+  if(b!=NONE) led_b = b;
+  #if ERROR_LEDS_ENABLED
+    updateLed(ledg_pin, led_g);
+    updateLed(ledy_pin, led_y);
+    updateLed(ledb_pin, led_b);
+  #endif
+}
+
+#if IMU_SENSOR_ENABLED
+// This logs the IMU rotation data over a timer of samples to find the sensors dift
+void calibrateIMU() {
+  // Start IMU sesnor and make sure it can be connected to
+    IMU.initialize();
+    if (!IMU.testConnection()) {
+      systemFault(true,"IMU sensor not detected","", NONE, NONE, NONE);
+      return;
+    }
+    // Read the IMU sensor for specified number of loops and log data
+    int16_t gx, gy, gz;
+    float IMU_sample_sum = 0;
+    for (int i = 0; i < IMU_offset_bias_samples; i++) {
+        IMU.getRotation(&gx, &gy, &gz);
+        float rate_raw = gz / 131.0;  
+        IMU_sample_sum += rate_raw;
+        delay(20); 
+    }
+    // Use logged data to figure out average IMU drift(IMU_offset_bias) factor
+    IMU_offset_bias=IMU_sample_sum/IMU_offset_bias_samples;
+}
+
+
+
+
   // This uses the same format as Serial commands sent to the arduino but it sends them back to the jetson for live serial update
 void sendSerialFeedback(char command, const uint8_t* data, size_t dataLen) {
   // Start and end byte for feedback command
@@ -656,7 +762,16 @@ void sendSerialFeedback(char command, const uint8_t* data, size_t dataLen) {
   // Write serial buffer to Serial
   Serial.write(buf, idx);   
 }
+//Saftey code for Jetson
+void sendSafetyFeedback(uint8_t safetyCode) {
+    uint8_t safetyData[1];
+    safetyData[0] = safetyCode;
+    sendSerialFeedback('S', safetyData, 1);
+}
 
+  
+  
+  
 // This processes the serial buffer and if the buffer passes it's byte checks, it's sent to processMessage() to update data.
 void processSerialBuffer() {
   while (Serial.available() > 0) {
