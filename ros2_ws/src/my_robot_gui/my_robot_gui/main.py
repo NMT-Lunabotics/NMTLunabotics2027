@@ -12,11 +12,21 @@ import time
 
 # GUI imports
 from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QLabel, QSizePolicy, QPushButton, QTextEdit
+
 # Auto-Robot Connect Imports
 from PyQt5.QtWidgets import QDialog, QComboBox, QLineEdit, QMessageBox, QFormLayout
 from PyQt5.QtGui import QPixmap
 from ros_worker import ROSWorker
-from PyQt5.QtCore import QThread, Qt
+from PyQt5.QtCore import QThread, Qt, QTimer
+
+# Auto-Cycle Button Imports
+from autonomous.autonomous_controller import (
+    create_shared_state, 
+    request_auto,
+    update_controller,
+    _sender,
+)
+import threading
 
 # Robot Discovery Settings (ported from 2026 Driver Station)
 UDP_DESTINATION = ("0.0.0.0", 11000)
@@ -108,6 +118,79 @@ def discover_robot(attempts=DISCOVERY_ATTEMPTS, timeout=DISCOVERY_TIMEOUT):
 
     return None
 
+#### GUI STYLESHEETS ####
+
+# Main Window and General Widgets 
+styleSheet = """
+QMainWindow {
+    background-color: #121212;}
+QLabel {
+    color: white;
+    font-size: 16pt;
+    font-family: "Segoe UI";
+    padding: 5px;
+    border: 1px solid #333333;
+    border-radius: 10px;}
+QTextEdit {
+    background-color: #111111;
+    color: #00FF00;
+    font-family: "Courier New";
+    font-size: 12pt;
+    border: 1px solid #333333;
+    border-radius: 10px;}
+#stats_panel {
+    background-color: #2A3F55;
+    border: 1px solid #333333;
+    border-radius: 10px;}
+#autonomous_panel {
+    background-color: #242424;
+    border: 1px solid #333333;
+    border-radius: 10px;}
+#errors_panel {
+    background-color: #3A3020;
+    border: 1px solid #5A4A2A;
+    border-radius: 10px;
+    }
+"""
+
+# Autonomous Procedure Buttons
+procedure_button_style = """
+QPushButton {
+    background-color: #DEDEDE;
+    color: black;
+    font-size: 12pt;
+    padding: 10px;
+    border: 2px solid #DEDEDE;
+    border-radius: 8px;
+}
+QPushButton:hover {
+    background-color: #FFFFFF;
+    border: 2px solid #00BFFF;
+}
+QPushButton:pressed {
+    background-color: #1B2938;
+}
+"""
+
+# Emergency Stop Button
+emergency_stop_style = """
+QPushButton {
+    background-color: #CC0000;
+    color: white;
+    font-size: 12pt;
+    font-weight: bold;
+    padding: 10px;
+    border: 2px solid #FF4444;
+    border-radius: 8px;
+}
+QPushButton:hover {
+    background-color: #FF2222;
+}
+QPushButton:pressed {
+    background-color: #880000;
+}
+"""
+
 class RobotSelectionDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -116,8 +199,7 @@ class RobotSelectionDialog(QDialog):
         self.setMinimumWidth(450)
 
 
-        ## GUI style - move later
-        # Match the BERMINATOR JR. MONITOR theme
+        ## GUI Stylesheet
         self.setStyleSheet("""
             QDialog {
                 background-color: #121212;
@@ -257,12 +339,14 @@ class RobotSelectionDialog(QDialog):
 class MainWindow(QMainWindow):
    def __init__(self):
        super().__init__()
+       self.auto_shared = create_shared_state()  
+       self.sender_stop_event = threading.Event()
+       self.sender_thread = None
 
 
        # Window Settings
        self.setWindowTitle("BERMINATOR JR. MONITOR")
        self.setMinimumSize(1700,1100) # Sets initial/minimum size
-
 
        # All Layouts
        main_layout = QVBoxLayout() # Main 2 Boxes Layout
@@ -362,14 +446,11 @@ class MainWindow(QMainWindow):
        self.robot_updates.setReadOnly(True)
 
        #Autonomous Updates Terminal
-       autonomous_updates = QTextEdit()
+       self.autonomous_updates = QTextEdit()
        autonomous_updates_title = QLabel("AUTONOMOUS CYCLE UPDATES")
        
        # Autonomous Updates Placeholder Text
-       autonomous_updates.setPlainText(
-       "[AUTO] Autonomous system initialized\n"
-       "[AUTO] Waiting for procedure... \n"
-       "[AUTO] Status: STANDBY\n")
+       self.autonomous_updates.setReadOnly(True)
        
        # Right VBox Layout: Stats & Auto-Cycle Updates
          #Stats Panel
@@ -386,20 +467,33 @@ class MainWindow(QMainWindow):
        # Autonomous Cycle Buttons
        dig_button = QPushButton("DIG")
        dump_button = QPushButton("DUMP")
-       auto_cycle_button = QPushButton("RUN AUTO CYCLE")
+       self.travel_button = QPushButton("TRAVEL")
        emergency_stop_button = QPushButton("EMERGENCY STOP")
-       emergency_stop_button.setStyleSheet("background-color: red; color: white; font-weight: bold;")
 
        autonomous_buttons.addWidget(dig_button)
        autonomous_buttons.addWidget(dump_button)
-       autonomous_buttons.addWidget(auto_cycle_button)
+       autonomous_buttons.addWidget(self.travel_button)
        autonomous_buttons.addWidget(emergency_stop_button)
+
+       # Apply Main Window Stylesheet
+       self.setStyleSheet(styleSheet)
+
+       # Apply Autonomous Button Styles
+       dig_button.setStyleSheet(procedure_button_style)
+       dump_button.setStyleSheet(procedure_button_style)
+       self.travel_button.setStyleSheet(procedure_button_style)
+
+       self.travel_button.clicked.connect(
+           self.start_travel)
+
+       # Apply Emergency Stop Styling
+       emergency_stop_button.setStyleSheet(emergency_stop_style)
        
        right_vbox_layout.addWidget(autonomous_panel)
        right_vbox_layout.setStretch(1,1)
 
        right_vbox_layout.addWidget(autonomous_updates_title)
-       right_vbox_layout.addWidget(autonomous_updates)
+       right_vbox_layout.addWidget(self.autonomous_updates)
 
 
        widget = QWidget()
@@ -449,9 +543,45 @@ class MainWindow(QMainWindow):
             self.camera_manager_node_pid = None
             
             print("Camera Manager Started!")
+
+   def start_sender(self):
+    if self.sender_thread is not None and self.sender_thread.is_alive():
+        return
+
+    self.sender_stop_event.clear()
+    self.sender_thread = threading.Thread(
+        target=_sender,
+        args=(self.auto_shared, self.sender_stop_event),
+        daemon=True,
+    )
+    self.sender_thread.start()
+
+   def start_travel(self):
+       success = request_auto(self.auto_shared, "transverse")
+
+       if success:
+           self.autonomous_updates.append("[AUTO] Travel procedure started.")
+       else:
+           self.autonomous_updates.append("[AUTO] Travel procedure failed to start.")
+
+   def update_autonomous(self):
+        update_controller(self.auto_shared)
+
+        with self.auto_shared["lock"]:
+            status = self.auto_shared["serial_status"]
+
+        if status != getattr(self, "last_auto_status", ""):
+            self.autonomous_updates.append(f"[AUTO] {status}")
+            self.last_auto_status = status
    
    def closeEvent(self,event):
         print("Shutting down ROS worker...")
+
+        # Stop the Arduino Sender
+        self.sender_stop_event.set()
+
+        if self.sender_thread is not None:
+            self.sender_thread.join(timeout=2)
 
         # Stop the ROS Worker
         if hasattr(self, "ros_worker"):
@@ -495,7 +625,6 @@ class MainWindow(QMainWindow):
 def main(): # Instructions to Start/Run GUI
     app = QApplication(sys.argv)
     app.setStyleSheet(styleSheet)
-    window = MainWindow()
 
     
     # Ask the operator to find or select a robot.
@@ -542,37 +671,6 @@ def main(): # Instructions to Start/Run GUI
     window.show()
     app.exec() # Starts the event loop
 
-styleSheet = """
-QMainWindow {
-    background-color: #121212;}
-QLabel {
-    color: white;
-    font-size: 16pt;
-    font-family: "Segoe UI";
-    padding: 5px;
-    border: 1px solid #333333;
-    border-radius: 10px;}
-QTextEdit {
-    background-color: #111111;
-    color: #00FF00;
-    font-family: "Courier New";
-    font-size: 12pt;
-    border: 1px solid #333333;
-    border-radius: 10px;}
-#stats_panel {
-    background-color: #2A3F55;
-    border: 1px solid #333333;
-    border-radius: 10px;}
-#autonomous_panel {
-    background-color: #242424;
-    border: 1px solid #333333;
-    border-radius: 10px;}
-#errors_panel {
-    background-color: #3A3020;
-    border: 1px solid #5A4A2A;
-    border-radius: 10px;
-    }
-"""
 
 if __name__ == '__main__': # If the file is run directly, execute main()
        main()

@@ -1,3 +1,9 @@
+# ROS Worker (Not Autonomous Worker)
+# - Initializes ROS2
+# - Creates Battery Voltage and Intel Subscribers
+# - Spins Subscribers in a SingleThreadedExecutor
+# - Shuts Down Subscriber Nodes when Stopped
+
 import rclpy
 from PyQt5.QtCore import QObject, pyqtSignal # Qt Bridge Communicator Imports
 from rclpy.executors import SingleThreadedExecutor
