@@ -437,6 +437,16 @@ float vel_gain = 2.5;
   MessageStore messages(screen1);
 #endif
 
+void sendTelemetryFloat(const char* id, float value) {
+  Serial.print(id);
+  Serial.write((const uint8_t*)&value, sizeof(value));
+}
+
+void sendTelemetryBool(const char* id, bool value) {
+  Serial.print(id);
+  Serial.write((uint8_t)(value ? 1 : 0));
+}
+
 // void processMessage(byte* data, int length);
 void stop_all();
 void processSerialBuffer();
@@ -962,44 +972,32 @@ void loop() {
         amp_tick_count = 0;
 
         amp_average_left_motor = abs(amp_average_left_motor / amp_window_size - offset_left_motor) / CURRENT_SCALE;
-        Serial.print("TMSA");
-        Serial.println(amp_average_left_motor);
+        sendTelemetryFloat("TMSA", amp_average_left_motor);
 
         amp_average_right_motor = abs(amp_average_right_motor / amp_window_size - offset_right_motor) / CURRENT_SCALE;
-        Serial.print("BMSA");
-        Serial.println(amp_average_right_motor);
+        sendTelemetryFloat("BMSA", amp_average_right_motor);
 
         amp_average_arm_actuators = abs(amp_average_arm_actuators / amp_window_size - offset_arm_actuators) / CURRENT_SCALE;
-        Serial.print("A1SA");
-        Serial.println(amp_average_arm_actuators);
+        sendTelemetryFloat("A1SA", amp_average_arm_actuators);
 
         amp_average_bucket_actuators = abs(amp_average_bucket_actuators / amp_window_size - offset_bucket_actuators) / CURRENT_SCALE;
-        Serial.print("A3SA");
-        Serial.println(amp_average_bucket_actuators);
+        sendTelemetryFloat("A3SA", amp_average_bucket_actuators);
 
         amp_average_top_driver = abs(amp_average_top_driver / amp_window_size - offset_top_driver) / CURRENT_SCALE;
-        Serial.print("TMDA");
-        Serial.println(amp_average_top_driver);
+        sendTelemetryFloat("TMDA", amp_average_top_driver);
 
         vel_average_top_driver /= amp_window_size;
-        Serial.print("TMDV");
-        Serial.println(vel_average_top_driver);
+        sendTelemetryFloat("TMDV", vel_average_top_driver);
 
-        Serial.print("TOPDRIVERFAULT");
-        Serial.println(fault_top_driver ? 1 : 0);
+        sendTelemetryBool("TOPDRIVERFAULT", fault_top_driver);
 
         amp_average_bottom_driver = abs(amp_average_bottom_driver / amp_window_size - offset_bottom_driver) / CURRENT_SCALE;
-        Serial.print("BMDA");
-        Serial.println(amp_average_bottom_driver);
+        sendTelemetryFloat("BMDA", amp_average_bottom_driver);
 
         vel_average_bottom_driver /= amp_window_size;
-        Serial.print("BMDV");
-        Serial.println(vel_average_bottom_driver);
+        sendTelemetryFloat("BMDV", vel_average_bottom_driver);
 
-        Serial.print("BOTTOMDRIVERFAULT");
-        Serial.println(fault_bottom_driver ? 1 : 0);
-
-        Serial.println("");
+        sendTelemetryBool("BOTTOMDRIVERFAULT", fault_bottom_driver);
 
         amp_average_left_motor = 0;
         amp_average_right_motor = 0;
