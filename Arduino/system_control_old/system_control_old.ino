@@ -304,34 +304,8 @@ String system_fault_msg = "";
 bool system_started = false;
 //int rc_startup_state=0;
 #if CURRENT_LOGGING==1
-  const float ADC_VREF = 5.0;
-  const float SENSOR_MV_PER_A = 66.0;
-  const float COUNTS_PER_AMP = (SENSOR_MV_PER_A / 1000.0) / (ADC_VREF / 1023.0);
-
   const unsigned long TELEMETRY_PERIOD_MS = 100;
-  const unsigned long CAL_SETTLE_MS = 3000;
-  const unsigned long CAL_TIME_MS = 2000;
-  const int DRIVER_FAULT_THRESHOLD = 512;
-  const bool DRIVER_FAULT_ACTIVE_HIGH = false;
-
-  const uint8_t CUR_PINS[6] = {
-    CURRENT_LEFT_MOTOR, CURRENT_RIGHT_MOTOR,
-    CURRENT_ARM_ACTUATORS, CURRENT_BUCKET_ACTUATORS,
-    CURRENT_TOP_MOTOR_DRIVER, CURRENT_BOTTOM_MOTOR_DRIVER
-  };
-  const char* CUR_IDS[6] = {"TMSA", "BMSA", "A1SA", "A3SA", "TMDA", "BMDA"};
-
-  float cur_sum[6] = {0};
-  float cur_offset[6] = {0};
-  float cal_sum[6] = {0};
-  float vel_sum[2] = {0};
-  uint16_t sample_count = 0;
-  uint16_t cal_count = 0;
-  unsigned long cal_start = 0;
   unsigned long last_telem_time = 0;
-  bool calibration_done = false;
-  bool fault_top_driver = false;
-  bool fault_bottom_driver = false;
 
   int readAdc(uint8_t pin) {
     analogRead(pin);
@@ -907,52 +881,19 @@ void loop() {
 #if CURRENT_LOGGING==1
   {
     unsigned long now = millis();
-    bool idle = (mL_speed == 0 && mR_speed == 0 &&
-                 mLR_rotation_speed == 0 &&
-                 aL_speed == 0 && aR_speed == 0 && aB_speed == 0);
+    if (now - last_telem_time >= TELEMETRY_PERIOD_MS) {
+      last_telem_time = now;
 
-    if (!calibration_done) {
-      if (!idle || cal_start == 0) {
-        cal_start = now;
-        cal_count = 0;
-        for (int i = 0; i < 6; i++) cal_sum[i] = 0;
-      } else if (now - cal_start >= CAL_SETTLE_MS) {
-        for (int i = 0; i < 6; i++) cal_sum[i] += readAdc(CUR_PINS[i]);
-        cal_count++;
-        if (now - cal_start >= CAL_SETTLE_MS + CAL_TIME_MS) {
-          for (int i = 0; i < 6; i++) cur_offset[i] = cal_sum[i] / cal_count;
-          calibration_done = true;
-          Serial.println("CALIBRATION DONE");
-        }
-      }
-    } else {
-      for (int i = 0; i < 6; i++) cur_sum[i] += readAdc(CUR_PINS[i]);
-      vel_sum[0] += readAdc(VELOCITY_TOP_MOTOR_DRIVER);
-      vel_sum[1] += readAdc(VELOCITY_BOTTOM_MOTOR_DRIVER);
-
-      if ((readAdc(STATE_TOP_MOTOR_DRIVER) > DRIVER_FAULT_THRESHOLD) == DRIVER_FAULT_ACTIVE_HIGH)
-        fault_top_driver = true;
-      if ((readAdc(STATE_BOTTOM_MOTOR_DRIVER) > DRIVER_FAULT_THRESHOLD) == DRIVER_FAULT_ACTIVE_HIGH)
-        fault_bottom_driver = true;
-      sample_count++;
-
-      if (now - last_telem_time >= TELEMETRY_PERIOD_MS && sample_count > 0) {
-        last_telem_time = now;
-
-        for (int i = 0; i < 6; i++) {
-          float amps = (cur_sum[i] / sample_count - cur_offset[i]) / COUNTS_PER_AMP;
-          sendTelemetryFloat(CUR_IDS[i], amps);
-          cur_sum[i] = 0;
-        }
-        sendTelemetryFloat("TMDV", vel_sum[0] / sample_count);
-        sendTelemetryFloat("BMDV", vel_sum[1] / sample_count);
-        sendTelemetryBool("TOPDRIVERFAULT", fault_top_driver);
-        sendTelemetryBool("BOTTOMDRIVERFAULT", fault_bottom_driver);
-
-        vel_sum[0] = vel_sum[1] = 0;
-        fault_top_driver = fault_bottom_driver = false;
-        sample_count = 0;
-      }
+      sendTelemetryFloat("TMSA", readAdc(CURRENT_LEFT_MOTOR));
+      sendTelemetryFloat("BMSA", readAdc(CURRENT_RIGHT_MOTOR));
+      sendTelemetryFloat("A1SA", readAdc(CURRENT_ARM_ACTUATORS));
+      sendTelemetryFloat("A3SA", readAdc(CURRENT_BUCKET_ACTUATORS));
+      sendTelemetryFloat("TMDA", readAdc(CURRENT_TOP_MOTOR_DRIVER));
+      sendTelemetryFloat("TMDV", readAdc(VELOCITY_TOP_MOTOR_DRIVER));
+      sendTelemetryBool("TOPDRIVERFAULT", readAdc(STATE_TOP_MOTOR_DRIVER) > 512);
+      sendTelemetryFloat("BMDA", readAdc(CURRENT_BOTTOM_MOTOR_DRIVER));
+      sendTelemetryFloat("BMDV", readAdc(VELOCITY_BOTTOM_MOTOR_DRIVER));
+      sendTelemetryBool("BOTTOMDRIVERFAULT", readAdc(STATE_BOTTOM_MOTOR_DRIVER) > 512);
     }
   }
 #endif
