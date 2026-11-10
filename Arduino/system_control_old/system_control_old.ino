@@ -304,45 +304,39 @@ String system_fault_msg = "";
 bool system_started = false;
 //int rc_startup_state=0;
 #if CURRENT_LOGGING==1
-  unsigned long last_amp_time = 0;
-  const int amp_update_rate = 20;
-  const int amp_window_size = 20;
-  float amp_average_left_motor = 0;
-  float amp_average_right_motor = 0;
-  float amp_average_arm_actuators = 0;
-  float amp_average_bucket_actuators = 0;
-  float amp_average_top_driver = 0;
-  float amp_average_bottom_driver = 0;
-  float vel_average_top_driver = 0;
-  float vel_average_bottom_driver = 0;
-  bool fault_top_driver = false;
-  bool fault_bottom_driver = false;
-  int amp_tick_count = 0;
+  const float ADC_VREF = 5.0;
+  const float SENSOR_MV_PER_A = 66.0;
+  const float COUNTS_PER_AMP = (SENSOR_MV_PER_A / 1000.0) / (ADC_VREF / 1023.0);
 
-  const float CURRENT_SCALE = 13.5;
+  const unsigned long TELEMETRY_PERIOD_MS = 100;
+  const unsigned long CAL_SETTLE_MS = 3000;
+  const unsigned long CAL_TIME_MS = 2000;
   const int DRIVER_FAULT_THRESHOLD = 512;
   const bool DRIVER_FAULT_ACTIVE_HIGH = false;
 
-  const unsigned long CALIBRATION_TIME_MS = 10000;
-  unsigned long calibration_start_time = 0;
+  const uint8_t CUR_PINS[6] = {
+    CURRENT_LEFT_MOTOR, CURRENT_RIGHT_MOTOR,
+    CURRENT_ARM_ACTUATORS, CURRENT_BUCKET_ACTUATORS,
+    CURRENT_TOP_MOTOR_DRIVER, CURRENT_BOTTOM_MOTOR_DRIVER
+  };
+  const char* CUR_IDS[6] = {"TMSA", "BMSA", "A1SA", "A3SA", "TMDA", "BMDA"};
+
+  float cur_sum[6] = {0};
+  float cur_offset[6] = {0};
+  float cal_sum[6] = {0};
+  float vel_sum[2] = {0};
+  uint16_t sample_count = 0;
+  uint16_t cal_count = 0;
+  unsigned long cal_start = 0;
+  unsigned long last_telem_time = 0;
   bool calibration_done = false;
-  long calibration_sample_count = 0;
+  bool fault_top_driver = false;
+  bool fault_bottom_driver = false;
 
-  float cal_sum_left_motor = 0;
-  float cal_sum_right_motor = 0;
-  float cal_sum_arm_actuators = 0;
-  float cal_sum_bucket_actuators = 0;
-  float cal_sum_top_driver = 0;
-  float cal_sum_bottom_driver = 0;
-
-  float offset_left_motor = 0;
-  float offset_right_motor = 0;
-  float offset_arm_actuators = 0;
-  float offset_bucket_actuators = 0;
-  float offset_top_driver = 0;
-  float offset_bottom_driver = 0;
-
-  unsigned long debug_last_time = 0;
+  int readAdc(uint8_t pin) {
+    analogRead(pin);
+    return analogRead(pin);
+  }
 #endif
 
 #if SENSOR_OUTPUT == 7
@@ -910,109 +904,59 @@ void loop() {
   messages.systemMessageUpdate(current_time);
 #endif
 
-
 #if CURRENT_LOGGING==1
-  unsigned long amp_now = millis();
+  {
+    unsigned long now = millis();
+    bool idle = (mL_speed == 0 && mR_speed == 0 &&
+                 mLR_rotation_speed == 0 &&
+                 aL_speed == 0 && aR_speed == 0 && aB_speed == 0);
 
-  if(amp_now - debug_last_time >= 1000){
-    debug_last_time = amp_now;
-    //Serial.print("LOG ALIVE t=");
-    //Serial.print(amp_now);
-    //Serial.print(" cal=");
-    //Serial.println(calibration_done);
-  }
-
-  if(amp_now - last_amp_time >= 1000 / amp_update_rate){
-    last_amp_time = amp_now;
-
-    if(!calibration_done){
-      if(calibration_sample_count == 0){
-        calibration_start_time = amp_now;
-        Serial.println("CALIBRATION START");
+    if (!calibration_done) {
+      if (!idle || cal_start == 0) {
+        cal_start = now;
+        cal_count = 0;
+        for (int i = 0; i < 6; i++) cal_sum[i] = 0;
+      } else if (now - cal_start >= CAL_SETTLE_MS) {
+        for (int i = 0; i < 6; i++) cal_sum[i] += readAdc(CUR_PINS[i]);
+        cal_count++;
+        if (now - cal_start >= CAL_SETTLE_MS + CAL_TIME_MS) {
+          for (int i = 0; i < 6; i++) cur_offset[i] = cal_sum[i] / cal_count;
+          calibration_done = true;
+          Serial.println("CALIBRATION DONE");
+        }
       }
-      calibration_sample_count += 1;
+    } else {
+      for (int i = 0; i < 6; i++) cur_sum[i] += readAdc(CUR_PINS[i]);
+      vel_sum[0] += readAdc(VELOCITY_TOP_MOTOR_DRIVER);
+      vel_sum[1] += readAdc(VELOCITY_BOTTOM_MOTOR_DRIVER);
 
-      cal_sum_left_motor += analogRead(CURRENT_LEFT_MOTOR);
-      cal_sum_right_motor += analogRead(CURRENT_RIGHT_MOTOR);
-      cal_sum_arm_actuators += analogRead(CURRENT_ARM_ACTUATORS);
-      cal_sum_bucket_actuators += analogRead(CURRENT_BUCKET_ACTUATORS);
-      cal_sum_top_driver += analogRead(CURRENT_TOP_MOTOR_DRIVER);
-      cal_sum_bottom_driver += analogRead(CURRENT_BOTTOM_MOTOR_DRIVER);
+      if ((readAdc(STATE_TOP_MOTOR_DRIVER) > DRIVER_FAULT_THRESHOLD) == DRIVER_FAULT_ACTIVE_HIGH)
+        fault_top_driver = true;
+      if ((readAdc(STATE_BOTTOM_MOTOR_DRIVER) > DRIVER_FAULT_THRESHOLD) == DRIVER_FAULT_ACTIVE_HIGH)
+        fault_bottom_driver = true;
+      sample_count++;
 
-      if(amp_now - calibration_start_time >= CALIBRATION_TIME_MS){
-        offset_left_motor = cal_sum_left_motor / calibration_sample_count;
-        offset_right_motor = cal_sum_right_motor / calibration_sample_count;
-        offset_arm_actuators = cal_sum_arm_actuators / calibration_sample_count;
-        offset_bucket_actuators = cal_sum_bucket_actuators / calibration_sample_count;
-        offset_top_driver = cal_sum_top_driver / calibration_sample_count;
-        offset_bottom_driver = cal_sum_bottom_driver / calibration_sample_count;
+      if (now - last_telem_time >= TELEMETRY_PERIOD_MS && sample_count > 0) {
+        last_telem_time = now;
 
-        calibration_done = true;
-        Serial.println("CALIBRATION DONE");
-      }
-    }
-    else{
-      amp_tick_count += 1;
-
-      amp_average_left_motor += analogRead(CURRENT_LEFT_MOTOR);
-      amp_average_right_motor += analogRead(CURRENT_RIGHT_MOTOR);
-      amp_average_arm_actuators += analogRead(CURRENT_ARM_ACTUATORS);
-      amp_average_bucket_actuators += analogRead(CURRENT_BUCKET_ACTUATORS);
-      amp_average_top_driver += analogRead(CURRENT_TOP_MOTOR_DRIVER);
-      amp_average_bottom_driver += analogRead(CURRENT_BOTTOM_MOTOR_DRIVER);
-      vel_average_top_driver += analogRead(VELOCITY_TOP_MOTOR_DRIVER);
-      vel_average_bottom_driver += analogRead(VELOCITY_BOTTOM_MOTOR_DRIVER);
-
-      bool top_state_high = analogRead(STATE_TOP_MOTOR_DRIVER) > DRIVER_FAULT_THRESHOLD;
-      bool bottom_state_high = analogRead(STATE_BOTTOM_MOTOR_DRIVER) > DRIVER_FAULT_THRESHOLD;
-      if(top_state_high == DRIVER_FAULT_ACTIVE_HIGH) fault_top_driver = true;
-      if(bottom_state_high == DRIVER_FAULT_ACTIVE_HIGH) fault_bottom_driver = true;
-
-      if(amp_tick_count >= amp_window_size){
-        amp_tick_count = 0;
-
-        amp_average_left_motor = abs(amp_average_left_motor / amp_window_size - offset_left_motor) / CURRENT_SCALE;
-        sendTelemetryFloat("TMSA", amp_average_left_motor);
-
-        amp_average_right_motor = abs(amp_average_right_motor / amp_window_size - offset_right_motor) / CURRENT_SCALE;
-        sendTelemetryFloat("BMSA", amp_average_right_motor);
-
-        amp_average_arm_actuators = abs(amp_average_arm_actuators / amp_window_size - offset_arm_actuators) / CURRENT_SCALE;
-        sendTelemetryFloat("A1SA", amp_average_arm_actuators);
-
-        amp_average_bucket_actuators = abs(amp_average_bucket_actuators / amp_window_size - offset_bucket_actuators) / CURRENT_SCALE;
-        sendTelemetryFloat("A3SA", amp_average_bucket_actuators);
-
-        amp_average_top_driver = abs(amp_average_top_driver / amp_window_size - offset_top_driver) / CURRENT_SCALE;
-        sendTelemetryFloat("TMDA", amp_average_top_driver);
-
-        vel_average_top_driver /= amp_window_size;
-        sendTelemetryFloat("TMDV", vel_average_top_driver);
-
+        for (int i = 0; i < 6; i++) {
+          float amps = (cur_sum[i] / sample_count - cur_offset[i]) / COUNTS_PER_AMP;
+          sendTelemetryFloat(CUR_IDS[i], amps);
+          cur_sum[i] = 0;
+        }
+        sendTelemetryFloat("TMDV", vel_sum[0] / sample_count);
+        sendTelemetryFloat("BMDV", vel_sum[1] / sample_count);
         sendTelemetryBool("TOPDRIVERFAULT", fault_top_driver);
-
-        amp_average_bottom_driver = abs(amp_average_bottom_driver / amp_window_size - offset_bottom_driver) / CURRENT_SCALE;
-        sendTelemetryFloat("BMDA", amp_average_bottom_driver);
-
-        vel_average_bottom_driver /= amp_window_size;
-        sendTelemetryFloat("BMDV", vel_average_bottom_driver);
-
         sendTelemetryBool("BOTTOMDRIVERFAULT", fault_bottom_driver);
 
-        amp_average_left_motor = 0;
-        amp_average_right_motor = 0;
-        amp_average_arm_actuators = 0;
-        amp_average_bucket_actuators = 0;
-        amp_average_top_driver = 0;
-        amp_average_bottom_driver = 0;
-        vel_average_top_driver = 0;
-        vel_average_bottom_driver = 0;
-        fault_top_driver = false;
-        fault_bottom_driver = false;
+        vel_sum[0] = vel_sum[1] = 0;
+        fault_top_driver = fault_bottom_driver = false;
+        sample_count = 0;
       }
     }
   }
 #endif
+
 }
 
 // Read serial communication from autonomy computer and set system variables to output.
