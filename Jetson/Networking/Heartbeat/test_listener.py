@@ -5,7 +5,7 @@ import re, socket, threading, time
 
 # Config options, make these match the robot heartbeat settings
 PORT=10000
-PREFIX="TEST27"
+PREFIX="NMT27"
 
 # Initaliztion, some code to initalize a new heartbeat socket
 PATTERN=re.compile(rf"{re.escape(PREFIX)}:([A-Za-z0-9_.-]+)")

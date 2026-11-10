@@ -962,41 +962,41 @@ void loop() {
         amp_tick_count = 0;
 
         amp_average_left_motor = abs(amp_average_left_motor / amp_window_size - offset_left_motor) / CURRENT_SCALE;
-        Serial.print("TMSA:");
+        Serial.print("TMSA");
         Serial.println(amp_average_left_motor);
 
         amp_average_right_motor = abs(amp_average_right_motor / amp_window_size - offset_right_motor) / CURRENT_SCALE;
-        Serial.print("BMSA:");
+        Serial.print("BMSA");
         Serial.println(amp_average_right_motor);
 
         amp_average_arm_actuators = abs(amp_average_arm_actuators / amp_window_size - offset_arm_actuators) / CURRENT_SCALE;
-        Serial.print("A1SA:");
+        Serial.print("A1SA");
         Serial.println(amp_average_arm_actuators);
 
         amp_average_bucket_actuators = abs(amp_average_bucket_actuators / amp_window_size - offset_bucket_actuators) / CURRENT_SCALE;
-        Serial.print("A3SA:");
+        Serial.print("A3SA");
         Serial.println(amp_average_bucket_actuators);
 
         amp_average_top_driver = abs(amp_average_top_driver / amp_window_size - offset_top_driver) / CURRENT_SCALE;
-        Serial.print("TMDA:");
+        Serial.print("TMDA");
         Serial.println(amp_average_top_driver);
 
         vel_average_top_driver /= amp_window_size;
-        Serial.print("TMDV:");
+        Serial.print("TMDV");
         Serial.println(vel_average_top_driver);
 
-        Serial.print("TOPDRIVERFAULT:");
+        Serial.print("TOPDRIVERFAULT");
         Serial.println(fault_top_driver ? 1 : 0);
 
         amp_average_bottom_driver = abs(amp_average_bottom_driver / amp_window_size - offset_bottom_driver) / CURRENT_SCALE;
-        Serial.print("BMDA:");
+        Serial.print("BMDA");
         Serial.println(amp_average_bottom_driver);
 
         vel_average_bottom_driver /= amp_window_size;
-        Serial.print("BMDV:");
+        Serial.print("BMDV");
         Serial.println(vel_average_bottom_driver);
 
-        Serial.print("BOTTOMDRIVERFAULT:");
+        Serial.print("BOTTOMDRIVERFAULT");
         Serial.println(fault_bottom_driver ? 1 : 0);
 
         Serial.println("");

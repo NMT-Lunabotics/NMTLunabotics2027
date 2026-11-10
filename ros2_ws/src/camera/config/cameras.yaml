@@ -138,7 +138,7 @@ camera_manager:
           - inferred2
           topic: /inferred2
         sensor_feed:
-          enabled: false
+          enabled: true
           camera:
           - 1
           type:

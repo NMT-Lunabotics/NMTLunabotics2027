@@ -13,6 +13,7 @@ find_package(rosidl_default_generators REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Example.msg"
   "msg/Command.msg"
+  "msg/SerialCommand.msg"
   "msg/NetworkStatus.msg"
 )
 

@@ -1,14 +1,7 @@
 #!/usr/bin/env python3
 
-import configparser
-import os
-import re
-import signal
-import sys
-import time
+import configparser, os, re, signal, sys, time, serial
 from datetime import datetime
-
-import serial
 import serial.tools.list_ports
 
 CONF_PATH = os.environ.get("SERIAL_RECORDER_CONF", "/etc/serial_recorder.conf")

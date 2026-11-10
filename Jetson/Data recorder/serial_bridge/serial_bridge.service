@@ -1,0 +1,13 @@
+[Unit]
+Description=Serial bridge background logger
+StartLimitIntervalSec=10
+StartLimitBurst=3
+
+[Service]
+User=luna
+Restart=on-failure
+RestartSec=3
+ExecStart=/bin/bash -c 'source /opt/ros/humble/setup.bash && source /home/luna/NMTLunabotics2027/ros2_ws/install/setup.bash && exec ros2 run serial_bridge serial_manager.py --ros-args -p background:=true'
+
+[Install]
+WantedBy=multi-user.target
